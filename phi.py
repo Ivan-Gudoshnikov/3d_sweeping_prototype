@@ -1,13 +1,16 @@
 import numpy as np
 from scipy import linalg
-def Phi(Q,xi):
+
+
+def phi(Q, xi):
     '''
     Lengths of springs
     :param Q:
     :param xi:
     :return:
     '''
-    return np.sqrt(np.sum(np.square(np.matmul(Q.transpose(),xi)), axis=1))
+    return np.sqrt(np.sum(np.square(np.matmul(Q.transpose(), xi)), axis=1))
+
 
 def K(Q, xi):
     '''
@@ -16,13 +19,14 @@ def K(Q, xi):
     :param xi:
     :return:
     '''
-    d=xi.shape[1]
+    d = xi.shape[1]
     return np.divide(
-        np.matmul(Q.transpose(),xi),
-        np.tile(Phi(Q,xi),(d,1)).transpose()
+        np.matmul(Q.transpose(), xi),
+        np.tile(phi(Q, xi), (d, 1)).transpose()
     )
 
-def DPhi(Q,xi):
+
+def d_xi_phi(Q, xi):
     '''
     :param Q:
     :param xi:
@@ -36,23 +40,32 @@ def DPhi(Q,xi):
     N1 = np.swapaxes(np.expand_dims(K(Q, xi), axis=2), 1, 2)
     N2 = np.tile(N1, (1, n, 1))
 
-    return np.multiply(N2,Q2)
+    return np.multiply(N2, Q2)
 
-def DPhiMat(Q,xi):
-    '''
-    :param Q:
-    :param xi:
-    :return: m x (nd) matrix representing D_xi phi of concatenated m x n slices
-    '''
-    DP=DPhi(Q,xi)
-    d=DP.shape[2]
-    result=DP[:,:,0]
-    for k in range(1,d):
-        result = np.concatenate((result,DP[:,:,k]), axis=1)
+
+def tensor_to_matrix(t):
+    """
+    :param t: m x n x d numpy array
+    :return: m x (nd) numpy array: ( t[m x n x (1)]  t[m x n x (2)] ... t[m x n x (d)])
+    """
+    (m, n, d) = t.shape
+    result = np.zeros((m,n*d))
+    for k in range(0, d):
+        result[:, range(n*k, n*(k+1))] = t[:, :, k]
     return result
 
 
-def kernelBasisDPhiMat(Q, xi):
-    return linalg.null_space(DPhiMat(Q,xi))
+def matrix_to_tensor(matrix, d):
+    """
+    :param matrix: m x (nd) numpy array: ((m x n x 1) (m x n x 2) ... (m x n x d)
+    :param d: 3nd dimension size
+    :return: m x n x d numpy array
+    """
+    m = matrix.shape[0]
+    n = matrix.shape[1]//d
+    result=np.zeros((m, n, d))
+    for k in range(0, d):
+        result[:, :, k] = matrix[:, range(n*k, n*(k+1))]
+    return result
 
 
