@@ -29,7 +29,7 @@ def matrix_to_tensor(matrix, d):
 
 
 class ElastoplasticProcess:
-    def __init__(self, Q, a, cminus, cplus, d, rho, d_xi_rho, d_t_rho):
+    def __init__(self, Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rho):
         # basic properties
 
         # incidence matrix
@@ -41,6 +41,8 @@ class ElastoplasticProcess:
         self.n = Q.shape[0]
         # spatial dimension
         self.d = d
+        #rnak of the additional constraint
+        self.q = q
 
         self.A = np.diag(a)
         self.cminus = cminus
@@ -108,5 +110,14 @@ class ElastoplasticProcess:
         """
         return self.n*self.d-np.linalg.matrix_rank(
             np.vstack((tensor_to_matrix(self.d_xi_rho(xi, 0)), tensor_to_matrix(self.d_xi_phi(xi)))))
+    def u_basis(self,xi,t):
+        result = np.matmul(tensor_to_matrix(self.d_xi_phi(xi)), tensor_to_matrix(self.ker_d_xi_rho(xi, t)).T)
+        if np.linalg.matrix_rank(result)!= self.n*self.d - self.q:
+            raise NameError("Constraint rho is not enough for that phi(xi)")
+        return result
+
+    def R(self,xi,t):
+        return np.linalg.pinv(tensor_to_matrix(self.d_xi_rho(xi,t)))
+
 
 
