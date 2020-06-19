@@ -1,16 +1,14 @@
 import numpy as np
 
 
-#d=np.array([1.,2.,3.])
-#print(np.diag(d))
-
-print(6//3)
 
 
-u=np.array([[[1,12,3],[2,22,4]]])
-print(u.shape)
-(m,n,d)=u.shape
-print(m,n,d)
+class MyClass:
+    def __init__(self, a):
+        self.a=a    #some variable
 
-a=np.array([[1,2],[3,4]])
-print(a[1,1])
+        self.add = lambda b: self.a+b
+
+
+my_object=MyClass(2)
+print(my_object.add(2)) #prints 4

@@ -54,3 +54,10 @@ print(phi.tensor_to_matrix(example1.d_xi_rho(xi0,0)))
 print("d_xi_rho_matrix_nullspace=")
 print(scipy.linalg.null_space(phi.tensor_to_matrix(example1.d_xi_rho(xi0,0))))
 print(example1.ker_d_xi_rho(xi0,0))
+print("d_xi_phi_matrix_nullspace=")
+print(example1.ker_d_xi_phi(xi0))
+
+print("codimension of the intersection:")
+print(np.linalg.matrix_rank(np.vstack((phi.tensor_to_matrix(example1.d_xi_rho(xi0,0)), phi.tensor_to_matrix(example1.d_xi_phi(xi0))))))
+print(example1.dim_intersection_nullspaces(xi0))
+
