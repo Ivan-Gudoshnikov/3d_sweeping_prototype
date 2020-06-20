@@ -1,30 +1,52 @@
 import numpy as np
 import scipy
 
+def matrix_to_vector(matrix):
+    """
+    :param matrix: n x d matrix
+    :return: vector ( [d x (1)]  [d x 2] ... [d x (n)])
+    """
+    (n, d) = matrix.shape
+    result = np.zeros(n*d)
+    for j in range(0,n):
+        result[range(d*j, d*(j+1))] = matrix[j, :]
+    return result
+
+def vector_to_matrix(vector, d):
+    """    
+    :param vector: vector ( [d x (1)]  [d x 2] ... [d x (n)])
+    :param d: 
+    :return: matrix: n x d matrix
+    """
+    n = vector.shape[0] // d
+    result = np.zeros((n, d))
+    for j in range(0,n):
+        result[j, :] = vector[range(d*j, d*(j+1))]
+    return result
 
 def tensor_to_matrix(t):
     """
     :param t: m x n x d numpy array
-    :return: m x (nd) numpy array: ( t[m x n x (1)]  t[m x n x (2)] ... t[m x n x (d)])
+    :return: m x (nd) numpy array: ( t[m x (1) x d]  t[m x (2) x d] ... t[m x (n) x d])
     """
     (m, n, d) = t.shape
     result = np.zeros((m, n * d))
-    for k in range(0, d):
-        result[:, range(n * k, n * (k + 1))] = t[:, :, k]
+    for j in range(0, n):
+        result[:, range(d * j, d * (j + 1))] = t[:, j, :]
     return result
 
 
 def matrix_to_tensor(matrix, d):
     """
-    :param matrix: m x (nd) numpy array: ((m x n x 1) (m x n x 2) ... (m x n x d)
+    :param matrix: m x (nd) numpy array: m x (nd) numpy array: ( t[m x (1) x d]  t[m x (2) x d] ... t[m x (n) x d])
     :param d: 3nd dimension size
     :return: m x n x d numpy array
     """
     m = matrix.shape[0]
     n = matrix.shape[1] // d
     result = np.zeros((m, n, d))
-    for k in range(0, d):
-        result[:, :, k] = matrix[:, range(n * k, n * (k + 1))]
+    for j in range(0, n):
+        result[:, j, :] = matrix[:, range(d * j, d * (j + 1))]
     return result
 
 
@@ -59,48 +81,51 @@ class ElastoplasticProcess:
         :param xi:
         :return:
         """
-        return np.sqrt(np.sum(np.square(np.matmul(self.Q.T, xi)), axis=1))
+        xi_mat=vector_to_matrix(xi,self.d)
+        return np.sqrt(np.sum(np.square(np.matmul(self.Q.T, xi_mat)), axis=1))
 
     def K(self, xi):
         """
         Normalized directions of springs
-        :param xi:
-        :return:
+        :param xi as a vector
+        :return: m x d matrix
         """
+        xi_mat = vector_to_matrix(xi, self.d)
         return np.divide(
-            np.matmul(self.Q.T, xi),
+            np.matmul(self.Q.T, xi_mat),
             np.tile(self.phi(xi), (self.d, 1)).T
         )
 
     def d_xi_phi(self, xi):
         """
         :param xi:
-        :return: m x n x d array representing D_xi phi
+        :return: m x (nd) array representing D_xi phi
         """
+
         Q1 = np.expand_dims(self.Q.T, axis=2)
         Q2 = np.tile(Q1, (1, 1, self.d))
 
         N1 = np.swapaxes(np.expand_dims(self.K(xi), axis=2), 1, 2)
         N2 = np.tile(N1, (1, self.n, 1))
 
-        return np.multiply(N2, Q2)
+        return tensor_to_matrix(np.multiply(N2, Q2))
 
     def ker_d_xi_rho(self, xi, t):
         """
         basis in the nullspace of d_xi_rho
         :param xi:
         :param t:
-        :return: (dim Ker d_xi_rho) x n x d array
+        :return:  (nd)x(dim Ker d_xi_rho) array
         """
-        return matrix_to_tensor(scipy.linalg.null_space(tensor_to_matrix(self.d_xi_rho(xi, t))).T, self.d)
+        return scipy.linalg.null_space(self.d_xi_rho(xi, t))
 
     def ker_d_xi_phi(self, xi):
         """
         basis in the nullspace of d_xi_phi
         :param xi:
-        :return: (dim Ker d_xi_phi) x n x d array
+        :return: (nd)x(dim Ker d_xi_phi) array
         """
-        return matrix_to_tensor(scipy.linalg.null_space(tensor_to_matrix(self.d_xi_phi(xi))).T, self.d)
+        return scipy.linalg.null_space(self.d_xi_phi(xi))
 
     def dim_intersection_nullspaces(self, xi):
         """
@@ -108,16 +133,16 @@ class ElastoplasticProcess:
         :param xi:
         :return:
         """
-        return self.n*self.d-np.linalg.matrix_rank(
-            np.vstack((tensor_to_matrix(self.d_xi_rho(xi, 0)), tensor_to_matrix(self.d_xi_phi(xi)))))
+        return self.n*self.d- np.linalg.matrix_rank(np.vstack((self.d_xi_rho(xi, 0), self.d_xi_phi(xi))))
+
     def u_basis(self,xi,t):
-        result = np.matmul(tensor_to_matrix(self.d_xi_phi(xi)), tensor_to_matrix(self.ker_d_xi_rho(xi, t)).T)
+        result = np.matmul(self.d_xi_phi(xi), self.ker_d_xi_rho(xi, t))
         if np.linalg.matrix_rank(result)!= self.n*self.d - self.q:
             raise NameError("Constraint rho is not enough for that phi(xi)")
         return result
 
     def R(self,xi,t):
-        return np.linalg.pinv(tensor_to_matrix(self.d_xi_rho(xi,t)))
+        return np.linalg.pinv(self.d_xi_rho(xi,t))
 
 
 
