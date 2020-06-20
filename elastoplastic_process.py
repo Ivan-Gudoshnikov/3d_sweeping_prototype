@@ -67,6 +67,9 @@ class ElastoplasticProcess:
         self.q = q
 
         self.A = np.diag(a)
+        self.Ainv = np.diag(1/a)
+
+
         self.cminus = cminus
         self.cplus = cplus
 
@@ -127,6 +130,19 @@ class ElastoplasticProcess:
         """
         return scipy.linalg.null_space(self.d_xi_phi(xi))
 
+    def H(self,xi,t):
+        """
+        :param xi:
+        :param t:
+        :return: external force term minus the reactions of rho
+        """
+        # Take the "upper" part of the pseudo-inverse matrix of the combined  matrix [(d_xi_phi)^T  (d_xi_rho)^T], which is of full row rank
+
+        M1 = self.d_xi_phi(xi).T
+        M2 = self.d_xi_rho(xi, t).T
+        return np.linalg.pinv(np.hstack((M1,M2)))[range(0,self.m), :]
+
+
     def dim_intersection_nullspaces(self, xi):
         """
         should always be 0!
@@ -141,8 +157,64 @@ class ElastoplasticProcess:
             raise NameError("Constraint rho is not enough for that phi(xi)")
         return result
 
+    def v_basis(self,xi,t):
+        return scipy.linalg.null_space(np.matmul(self.A, self.u_basis(xi,t)).T)
+
+
     def R(self,xi,t):
         return np.linalg.pinv(self.d_xi_rho(xi,t))
+
+    def p_u_coords(self,xi,t):
+        """
+        Projection matrix on U(xi,t) orthogonal to V(xi,t), in terms of coordinates in u_basis
+        Inefficient as a separate calculation, but this is a prototype
+        :param xi:
+        :param t:
+        :return:
+        """
+        M1=self.u_basis(xi, t)
+        M2=self.v_basis(xi, t)
+
+        inv= np.linalg.inv(np.hstack((M1,M2)))
+        return inv[range(0, M1.shape[1]),:]
+
+
+
+    def p_v_coords(self, xi, t):
+        """
+        Projection matrix on V(xi,t) orthogonal to U(xi,t), in terms of coordinates in terms of v_basis
+        :param xi:
+        :param t:
+        :return:
+        """
+        M1=self.u_basis(xi, t)
+        M2=self.v_basis(xi, t)
+
+        inv= np.linalg.inv(np.hstack((M1,M2)))
+        return inv[range(M1.shape[1],self.m),:]
+
+    def g_v_coords(self,xi,t):
+        """
+        Function g expressed in the coordinates of v_basis
+        :param xi:
+        :param t:
+        :return:
+        """
+        return np.matmul(np.matmul(np.matmul(self.p_v_coords(xi,t), self.d_xi_phi(xi)), self.R(xi,t)), self.d_t_rho(xi,t))
+
+    def h_u_coords(self,xi,t, fval):
+        """
+        Function h expressed in the coordinates of u_basis
+        :param xi:
+        :param t:
+        :param fval: external forces vector of the size (nd)
+        :return:
+        """
+        return np.matmul(np.matmul(np.matmul(self.p_u_coords(xi,t), self.Ainv),self.H(xi,t)), fval)
+
+
+
+
 
 
 
