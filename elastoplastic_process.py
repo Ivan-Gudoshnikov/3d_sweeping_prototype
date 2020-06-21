@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+from convex import Polytope
 
 def matrix_to_vector(matrix):
     """
@@ -211,6 +212,33 @@ class ElastoplasticProcess:
         :return:
         """
         return np.matmul(np.matmul(np.matmul(self.p_u_coords(xi,t), self.Ainv),self.H(xi,t)), fval)
+
+    def v_orth(self,xi,t):
+        """
+        Set of constraints which define V
+        :param xi:
+        :param t:
+        :return:
+        """
+        return scipy.linalg.null_space(self.v_basis(xi,t).T).T
+
+    def moving_set(self, xi, t, fval):
+        """
+        :param xi:
+        :param t:
+        :param fval: external forces value
+        :return:
+        """
+        A = np.vstack((self.A, -self.A))
+        b = np.hstack((self.cplus, -self.cminus))
+        #Aeq = self.v_orth(xi, t)
+        #beq = - np.matmul(Aeq, np.matmul(self.u_basis(xi, t), self.h_u_coords(xi, t)))
+
+        Aeq = self.p_u_coords(xi, t)
+        beq = -self.h_u_coords(xi, t, fval)
+
+        return Polytope(A, b, Aeq, beq)
+
 
 
 

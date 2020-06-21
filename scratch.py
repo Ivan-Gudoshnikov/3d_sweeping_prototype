@@ -28,3 +28,8 @@ v1=np.array([-1,-2])
 print(np.matmul(m1,v1))
 
 print(1/v)
+
+g=np.array([-1,4,-2,5,0,10])
+print(v<=g)
+print(all(v<=g))
+

@@ -17,7 +17,22 @@ class ConvexSet(ABC):
         """
         pass
 
+    
+    @abstractmethod
+    def __contains__(self, x):
+        """
+        Implement a check if a point x is from the set
+        :param x:
+        :return:
+        """
+        pass
+
+
+
+
 class Polytope(ConvexSet):
+    eps = 1e-10
+
     def __init__(self, A,b,Aeq,beq):
         """
         :param A:
@@ -45,6 +60,9 @@ class Polytope(ConvexSet):
 
         x = method.quadprog(H, -np.matmul(H,x), self.A, self.b, self.Aeq, self.beq)
         return x
+
+    def __contains__(self, x):
+        return all(np.matmul(self.A,x) <=self.b) and (np.linalg.norm(np.matmul(self.Aeq, x)-self.beq, ord=1) < self.eps)
 
 
 def test_polytope_projection():

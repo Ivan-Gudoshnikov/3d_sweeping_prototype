@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.linalg
 from elastoplastic_process import ElastoplasticProcess, tensor_to_matrix,matrix_to_tensor
+from quadprog_interface import McGibbonQuadprog
 
 
 Q = np.array([[ 1, 1, 0, 0, 0],
@@ -10,6 +11,9 @@ Q = np.array([[ 1, 1, 0, 0, 0],
 
 xi0 = np.array([0., 0.,   -1., 1.,   1., 1.,   0, 2.])
 t0 = 0
+dt=0.01
+
+e0 = np.array([0., 0., 0., 0., 0.])
 
 rho = lambda xi, t: np.array([xi[0],
                               xi[1],
@@ -99,4 +103,15 @@ print("h_u_coords=")
 print(example1.h_u_coords(xi0, t0, f(t0)))
 
 print("h=")
-print(np.matmul(example1.u_basis(xi0,t0),example1.h_u_coords(xi0,t0, f(t0))))
+print(np.matmul(example1.u_basis(xi0, t0), example1.h_u_coords(xi0,t0, f(t0))))
+
+print("v_basis and v_orth:")
+print(example1.v_orth(xi0, t0).dot(example1.v_basis(xi0, t0)))
+print(example1.v_basis(xi0, t0).T.dot(example1.v_orth(xi0, t0).T))
+
+moving_set1 = example1.moving_set(xi0, t0, f(t0))
+print("Moving set is ", moving_set1)
+print(e0 in moving_set1)
+e1 = example1.moving_set(xi0, t0+dt, f(t0+dt)).projection(example1.A, e0, McGibbonQuadprog())
+print(e1)
+
