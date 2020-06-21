@@ -33,3 +33,9 @@ g=np.array([-1,4,-2,5,0,10])
 print(v<=g)
 print(all(v<=g))
 
+u=np.array([[]])
+print(u.shape)
+
+print(np.identity(3)[1,:])
+
+print(np.hstack((np.identity(3), np.expand_dims(np.identity(3)[:,1], axis=1))))

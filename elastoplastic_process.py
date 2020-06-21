@@ -239,6 +239,9 @@ class ElastoplasticProcess:
 
         return Polytope(A, b, Aeq, beq)
 
+    def get_dot_xi(self, xi,t, e, dot_e):
+        pass
+
 
 
 
