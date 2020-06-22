@@ -186,8 +186,8 @@ def test_polytope_projection():
     print(box1.normal_cone(H2, p5).N)
 
 
-
-test_polytope_projection()
+if __name__ == "__main__":
+    test_polytope_projection()
 
 
 

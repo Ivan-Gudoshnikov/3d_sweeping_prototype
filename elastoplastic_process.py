@@ -249,7 +249,7 @@ class ElastoplasticProcess:
 
         return Polytope(A, b, Aeq, beq)
 
-    def dot_xi(self, xi,t, e, dot_e):
+    def dot_xi_and_p(self, xi, t, e, dot_e):
         """
         part of the formula for dot xi, whic gives u - component
         :param xi:
@@ -273,12 +273,13 @@ class ElastoplasticProcess:
             #TODO: alternative ways to find \dot xi from its constraints?
             u_and_l = McGibbonQuadprog().quadprog(np.identity(dim_u+l_size), np.zeros(dim_u+l_size), A, b, Aeq, beq)
             u_coords = u_and_l[range(0, dim_u)]
+            dot_p = np.matmul(N, u_and_l[range(dim_u,dim_u+l_size)])
         else:
             #if dot p = 0 we have  - dot x = - dot e in U + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)) du to sweeping process
             # take projection to fund u-coords
             u_coords = np.matmul(self.p_u_coords(xi, t), dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)))
-
-        return np.matmul(self.ker_d_xi_rho(xi, t), u_coords) - np.matmul(self.R(xi,t), self.d_t_rho(xi,t))
+            dot_p = np.zeros(self.m)
+        return np.matmul(self.ker_d_xi_rho(xi, t), u_coords) - np.matmul(self.R(xi,t), self.d_t_rho(xi,t)), dot_p
 
     def solve_system_step(self, xi_0, e_0, t_0, dt):
         t_1 = t_0+dt
@@ -288,7 +289,7 @@ class ElastoplasticProcess:
                                                     e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
                                                     McGibbonQuadprog())
         dot_e=(e_1-e_0)/dt
-        dot_xi = self.dot_xi(xi_0,t_0,e_0,dot_e)
+        (dot_xi, dot_p) = self.dot_xi_and_p(xi_0, t_0, e_0, dot_e)
         xi_1 = xi_0 + dt*dot_xi
         return xi_1, e_1
 
@@ -297,9 +298,9 @@ class ElastoplasticProcess:
         XI = np.zeros((self.n*self.d, nsteps+1))
         E = np.zeros((self.m, nsteps + 1))
 
-        T[0]=t0
-        XI[:,0]=xi0[:]
-        E[:,0]=e0[:]
+        T[0] = t0
+        XI[:,0] = xi0[:]
+        E[:,0] = e0[:]
 
         for i in range(nsteps):
             t_0  = T[i]

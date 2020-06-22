@@ -11,7 +11,7 @@ Q = np.array([[ 1, 1, 0, 0, 0],
 
 xi0 = np.array([0., 0.,   -1., 1.,   1., 1.,   0, 2.])
 t0 = 0
-dt=0.05
+dt=0.01
 
 tmax = 4
 nsteps= int((tmax-t0)//dt)
@@ -124,5 +124,7 @@ print("e1=")
 print(e1)
 
 (T,XI,E) = example1.solve(xi0,e0,t0, dt, nsteps)
+print(T.max())
+
 
 
