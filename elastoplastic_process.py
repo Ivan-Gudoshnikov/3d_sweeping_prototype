@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
-from convex import Polytope
+from convex import Polytope, Box
+from quadprog_interface import QuadprogInterface, McGibbonQuadprog
 
 def matrix_to_vector(matrix):
     """
@@ -52,7 +53,7 @@ def matrix_to_tensor(matrix, d):
 
 
 class ElastoplasticProcess:
-    def __init__(self, Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rho):
+    def __init__(self, Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rho, f):
         # basic properties
 
         # incidence matrix
@@ -78,6 +79,9 @@ class ElastoplasticProcess:
         self.rho = rho
         self.d_xi_rho = d_xi_rho
         self.d_t_rho = d_t_rho
+
+        #external forces
+        self.f=f
 
     def phi(self, xi):
         """
@@ -153,12 +157,19 @@ class ElastoplasticProcess:
         return self.n*self.d- np.linalg.matrix_rank(np.vstack((self.d_xi_rho(xi, 0), self.d_xi_phi(xi))))
 
     def u_basis(self,xi,t):
+        """
+        A very spceific, generally not orthogonal, basis in U, such that
+        the coordinates of u\in U  in it are the same as the coordinates in L^{-1}u in the ker_d_xi_rho basis
+        :param xi:
+        :param t:
+        :return:
+        """
         result = np.matmul(self.d_xi_phi(xi), self.ker_d_xi_rho(xi, t))
-        if np.linalg.matrix_rank(result)!= self.n*self.d - self.q:
+        if np.linalg.matrix_rank(result) != self.n*self.d - self.q:
             raise NameError("Constraint rho is not enough for that phi(xi)")
         return result
 
-    def v_basis(self,xi,t):
+    def v_basis(self, xi, t):
         return scipy.linalg.null_space(np.matmul(self.A, self.u_basis(xi,t)).T)
 
 
@@ -222,11 +233,10 @@ class ElastoplasticProcess:
         """
         return scipy.linalg.null_space(self.v_basis(xi,t).T).T
 
-    def moving_set(self, xi, t, fval):
+    def moving_set(self, xi, t):
         """
         :param xi:
         :param t:
-        :param fval: external forces value
         :return:
         """
         A = np.vstack((self.A, -self.A))
@@ -235,12 +245,83 @@ class ElastoplasticProcess:
         #beq = - np.matmul(Aeq, np.matmul(self.u_basis(xi, t), self.h_u_coords(xi, t)))
 
         Aeq = self.p_u_coords(xi, t)
-        beq = -self.h_u_coords(xi, t, fval)
+        beq = -self.h_u_coords(xi, t, self.f(t))
 
         return Polytope(A, b, Aeq, beq)
 
-    def get_dot_xi(self, xi,t, e, dot_e):
-        pass
+    def dot_xi(self, xi,t, e, dot_e):
+        """
+        part of the formula for dot xi, whic gives u - component
+        :param xi:
+        :param t:
+        :param e:
+        :param dot_e:
+        :return:
+        """
+        box = Box(np.matmul(self.Ainv,self.cminus), np.matmul(self.Ainv,self.cplus))
+        N = box.normal_cone(self.A, e).N
+
+        if N is not None:
+            u_basis=self.u_basis(xi,t)
+            Aeq = np.hstack((u_basis, -N))
+            beq = dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t))
+            l_size = N.shape[1]
+            dim_u = u_basis.shape[1]
+            A = np.hstack((np.zeros((l_size,dim_u)), - np.identity(l_size)))
+            b = np.zeros(l_size)
+
+            #TODO: alternative ways to find \dot xi from its constraints?
+            u_and_l = McGibbonQuadprog().quadprog(np.identity(dim_u+l_size), np.zeros(dim_u+l_size), A, b, Aeq, beq)
+            u_coords = u_and_l[range(0, dim_u)]
+        else:
+            #if dot p = 0 we have  - dot x = - dot e in U + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)) du to sweeping process
+            # take projection to fund u-coords
+            u_coords = np.matmul(self.p_u_coords(xi, t), dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)))
+
+        return np.matmul(self.ker_d_xi_rho(xi, t), u_coords) - np.matmul(self.R(xi,t), self.d_t_rho(xi,t))
+
+    def solve_system_step(self, xi_0, e_0, t_0, dt):
+        t_1 = t_0+dt
+        #see Tahar Haddad. Differential Inclusion Governed by a State Dependent Sweeping Process
+        #International Journal of Difference Equations, Volume 8, Number 1, pp. 63–70 (2013)
+        e_1 = self.moving_set(xi_0, t_1, ).projection(self.A,
+                                                    e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
+                                                    McGibbonQuadprog())
+        dot_e=(e_1-e_0)/dt
+        dot_xi = self.dot_xi(xi_0,t_0,e_0,dot_e)
+        xi_1 = xi_0 + dt*dot_xi
+        return xi_1, e_1
+
+    def solve(self, xi0,e0,t0, dt, nsteps):
+        T =  np.zeros(nsteps+1)
+        XI = np.zeros((self.n*self.d, nsteps+1))
+        E = np.zeros((self.m, nsteps + 1))
+
+        T[0]=t0
+        XI[:,0]=xi0[:]
+        E[:,0]=e0[:]
+
+        for i in range(nsteps):
+            t_0  = T[i]
+            xi_0 = XI[:,i]
+            e_0  = E[:,i]
+
+            t_1=t_0+dt
+            (xi_1,e_1)=self.solve_system_step(xi_0, e_0, t_0, dt)
+            T[i+1] = t_1
+            XI[:,i+1] = xi_1
+            E[:,i+1] = e_1
+
+        return (T,XI,E)
+
+
+
+
+
+
+
+
+
 
 
 

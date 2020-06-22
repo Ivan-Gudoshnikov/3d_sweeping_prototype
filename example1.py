@@ -11,7 +11,10 @@ Q = np.array([[ 1, 1, 0, 0, 0],
 
 xi0 = np.array([0., 0.,   -1., 1.,   1., 1.,   0, 2.])
 t0 = 0
-dt=0.01
+dt=0.05
+
+tmax = 4
+nsteps= int((tmax-t0)//dt)
 
 e0 = np.array([0., 0., 0., 0., 0.])
 
@@ -29,7 +32,7 @@ d_t_rho = lambda xi, t: np.array([0,0,0,-1])
 
 a = np.array([1., 1., 1., 1., 1.])
 cminus = np.array([-1.,-1.1,-1.15,-1.25,-1.05])
-cplus =  np.array([ 1., 1.1, 1.15, 1.25, 1.05])
+cplus  = np.array([ 1., 1.1, 1.15, 1.25, 1.05])
 
 #spatial dimension
 d=2
@@ -41,7 +44,7 @@ f = lambda t: np.array([0,0,  0,0,  0,0,  0,0])
 
 
 
-example1 = ElastoplasticProcess(Q, a, cminus, cplus, d,q, rho, d_xi_rho, d_t_rho)
+example1 = ElastoplasticProcess(Q, a, cminus, cplus, d,q, rho, d_xi_rho, d_t_rho, f)
 print("phi(xi0)=")
 print(example1.phi(xi0))
 
@@ -109,9 +112,17 @@ print("v_basis and v_orth:")
 print(example1.v_orth(xi0, t0).dot(example1.v_basis(xi0, t0)))
 print(example1.v_basis(xi0, t0).T.dot(example1.v_orth(xi0, t0).T))
 
-moving_set1 = example1.moving_set(xi0, t0, f(t0))
+moving_set1 = example1.moving_set(xi0, t0)
 print("Moving set is ", moving_set1)
 print(e0 in moving_set1)
-e1 = example1.moving_set(xi0, t0+dt, f(t0+dt)).projection(example1.A, e0, McGibbonQuadprog())
+
+(xi1,e1)=example1.solve_system_step(xi0,e0,t0,dt)
+print("Step1:")
+print("xi =")
+print(xi1)
+print("e1=")
 print(e1)
+
+(T,XI,E) = example1.solve(xi0,e0,t0, dt, nsteps)
+
 
