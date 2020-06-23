@@ -28,22 +28,8 @@ v1=np.array([-1,-2])
 print(np.matmul(m1,v1))
 
 print(1/v)
-
-g=np.array([-1,4,-2,5,0,10])
+v=np.array([-2, 10 ,0, 5, 0, 11])
+g=np.array([-1, 4,-2, 5, 0, 10])
 print(v<=g)
+print(v<=g+2)
 print(all(v<=g))
-
-u=np.array([[]])
-print(u.shape)
-
-print(np.identity(3)[1,:])
-
-print(np.hstack((np.identity(3), np.expand_dims(np.identity(3)[:,1], axis=1))))
-
-print(type(m1))
-ww=np.where(m1[:, 0] == 3)
-print(ww)
-
-u=[1,2]
-v=u.copy()
-print(v)

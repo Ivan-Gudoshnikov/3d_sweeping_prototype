@@ -88,6 +88,8 @@ class ElastoplasticProcess:
             spring_tuple = (np.where(self.Q[:, i] == 1)[0][0], np.where(self.Q[:, i] == -1)[0][0])
             self.connections.append(spring_tuple)
 
+        self.e_bounds_box=Box(np.matmul(self.Ainv,self.cminus), np.matmul(self.Ainv,self.cplus))
+
 
     def get_connections(self):
         return self.connections
@@ -286,8 +288,7 @@ class ElastoplasticProcess:
         :param dot_e:
         :return:
         """
-        box = Box(np.matmul(self.Ainv,self.cminus), np.matmul(self.Ainv,self.cplus))
-        N = box.normal_cone(self.A, e).N
+        N = self.e_bounds_box.normal_cone(self.A, e).N
 
         if N is not None:
             u_basis = self.u_basis(xi,t)
@@ -325,10 +326,14 @@ class ElastoplasticProcess:
         T =  np.zeros(nsteps+1)
         XI = np.zeros((self.n*self.d, nsteps+1))
         E = np.zeros((self.m, nsteps + 1))
+        X = np.zeros((self.m, nsteps + 1))
+        P = np.zeros((self.m, nsteps + 1))
 
         T[0] = t0
         XI[:,0] = xi0[:]
         E[:,0] = e0[:]
+        X[:,0] = self.phi(xi0)
+        P[:,0] = X[:,0] - E[:,0]
 
         for i in range(nsteps):
             t_0  = T[i]
@@ -340,8 +345,11 @@ class ElastoplasticProcess:
             T[i+1] = t_1
             XI[:,i+1] = xi_1
             E[:,i+1] = e_1
+            X[:,i+1] = self.phi(xi_1)
+            P[:, i+1] = X[:,i+1] - E[:,i+1]
 
-        return (T,XI,E)
+
+        return (T, XI, E, X, P)
 
 
 

@@ -15,7 +15,7 @@ dt=0.001
 
 #tmax = 4
 #nsteps= int((tmax-t0)//dt)
-nsteps = 2435 #the simulation breaks down afterwards
+nsteps = 3000
 
 e0 = np.array([0., 0., 0., 0., 0.])
 
@@ -32,8 +32,8 @@ d_xi_rho = lambda xi, t: np.array([[1,0,  0,0,  0,0,  0,0],
 d_t_rho = lambda xi, t: np.array([0,0,0,-1])
 
 a = np.array([1., 1., 1., 1., 1.])
-cminus = np.array([-0.2,-.1,-0.15,-0.25,-0.1])
-cplus  = np.array([ 0.2, .1, 0.15, 0.25, 0.1])
+cminus = np.array([-1,-1,-1,-1,-1])
+cplus  = np.array([ 1, 1, 1, 1, 1])
 
 #spatial dimension
 d=2
@@ -46,7 +46,7 @@ example1 = ElastoplasticProcess(Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rh
 
 (T, XI, E, X, P) = example1.solve(xi0, e0, t0, dt, nsteps)
 plt.plot(T,E.T)
-SpringsView(T, XI, E, example1,((-3,3),(-1,7)))
+SpringsView(T,XI,E, example1,((-3,3),(-1,7)))
 
 plt.show()
 

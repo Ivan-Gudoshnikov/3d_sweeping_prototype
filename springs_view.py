@@ -38,10 +38,17 @@ class SpringsView:
             xi = vector_to_matrix(self.XI[:, i], self.problem.get_d())
 
             self.nodes_markers.set_data(xi[:,0], xi[:,1])
+            active = self.problem.e_bounds_box.get_active_box_faces(E[:,i], eps=None) #None means the same eps as in the computations
+
             for i in range(problem.get_m()):
                 xdata = [xi[self.problem.connections[i][0], 0], xi[self.problem.connections[i][1], 0]]
                 ydata = [xi[self.problem.connections[i][0], 1], xi[self.problem.connections[i][1], 1]]
                 self.springs_lines[i].set_data(xdata, ydata)
+                if active[i] == 0:
+                    thickness = 1
+                else:
+                    thickness = 4
+                self.springs_lines[i].set_linewidth(thickness)
             return self.artists
 
         self.ani = animation.FuncAnimation(self.fig, update_animation, init_func=init_animation, frames=self.T.shape[0], interval=1, blit=True, repeat=True)

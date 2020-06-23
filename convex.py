@@ -63,6 +63,7 @@ class Polytope(ConvexSet):
         :param Aeq:
         :param beq:
         """
+        self.n=A.shape[1]
         self.A=A
         self.b=b
         self.Aeq=Aeq
@@ -85,8 +86,10 @@ class Polytope(ConvexSet):
         return x
 
     def __contains__(self, x):
+        if x.shape[0]!=self.n:
+            raise NameError("x is of wrong dimension!")
         if self.A is not None:
-            ineq = all(np.matmul(self.A,x) <=self.b)
+            ineq = all(np.matmul(self.A,x) -self.b <=self.eps)
         else:
             ineq = True
         if self.Aeq is not None:
@@ -106,6 +109,23 @@ class Box(Polytope):
         n = bmin.shape[0]
         super().__init__(A=np.vstack((np.identity(n), -np.identity(n))), b=np.hstack((bmax,-bmin)), Aeq=None, beq=None)
 
+    def get_active_box_faces(self, x, eps=None):
+        if eps is None:
+            eps = self.eps
+
+        if x.shape[0] != self.n:
+            raise NameError("x is of wrong dimension!")
+
+        active = np.zeros_like(x)
+        for i in range(self.n):
+            if self.bmax[i]-x[i] < eps:
+                active[i] = 1
+            if x[i] - self.bmin[i] < eps:
+                if active[i] == 1:
+                    raise NameError("Equality constraints is a box are not supported yet")
+                active[i] = -1
+        return active
+
     def normal_cone(self, H, x):
         """
         H actually don't matter for a box
@@ -118,16 +138,18 @@ class Box(Polytope):
 
         n=x.shape[0]
         N = None
-        for i in range(0,n):
-            if self.bmax[i]-x[i]<self.eps:
+
+        active = self.get_active_box_faces(x)
+
+        for i in range(n):
+            if active[i] == 1:
                 if N is None:
                     N = np.expand_dims(np.identity(n)[:,i], axis=1)
                 else:
                     N = np.hstack((N, np.expand_dims(np.identity(n)[:,i], axis=1)))
-        for i in range(0,n):
-            if  x[i] - self.bmin[i] < self.eps:
+            if active[i] == -1:
                 if N is None:
-                    N = - np.expand_dims(np.identity(n)[:,i], axis=1)
+                    N = np.expand_dims(-np.identity(n)[:,i], axis=1)
                 else:
                     N = np.hstack((N, np.expand_dims(-np.identity(n)[:,i], axis=1)))
 
