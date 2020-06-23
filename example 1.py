@@ -48,6 +48,8 @@ example1 = ElastoplasticProcess(Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rh
 plt.plot(T,E.T)
 SpringsView(T,XI,E, example1,((-3,3),(-1,7)))
 
+plt.show()
+
 
 
 

@@ -43,3 +43,7 @@ print(np.hstack((np.identity(3), np.expand_dims(np.identity(3)[:,1], axis=1))))
 print(type(m1))
 ww=np.where(m1[:, 0] == 3)
 print(ww)
+
+u=[1,2]
+v=u.copy()
+print(v)
