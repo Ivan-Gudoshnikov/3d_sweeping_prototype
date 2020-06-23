@@ -14,7 +14,7 @@ t0 = 0
 dt=0.01
 
 tmax = 4
-nsteps= int((tmax-t0)//dt)
+nsteps = int((tmax-t0)//dt)
 
 e0 = np.array([0., 0., 0., 0., 0.])
 

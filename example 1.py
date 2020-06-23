@@ -1,7 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import scipy.linalg
 from elastoplastic_process import ElastoplasticProcess
-
+from springs_view import SpringsView
 
 Q = np.array([[ 1, 1, 0, 0, 0],
               [-1, 0, 1, 1, 0],
@@ -10,10 +11,11 @@ Q = np.array([[ 1, 1, 0, 0, 0],
 
 xi0 = np.array([0., 0.,   -1., 1.,   1., 1.,   0, 2.])
 t0 = 0
-dt=0.01
+dt=0.001
 
-tmax = 4
-nsteps= int((tmax-t0)//dt)
+#tmax = 4
+#nsteps= int((tmax-t0)//dt)
+nsteps = 2435 #the simulation breaks down afterwards
 
 e0 = np.array([0., 0., 0., 0., 0.])
 
@@ -30,8 +32,8 @@ d_xi_rho = lambda xi, t: np.array([[1,0,  0,0,  0,0,  0,0],
 d_t_rho = lambda xi, t: np.array([0,0,0,-1])
 
 a = np.array([1., 1., 1., 1., 1.])
-cminus = np.array([-1.,-1.1,-1.15,-1.25,-1.05])
-cplus  = np.array([ 1., 1.1, 1.15, 1.25, 1.05])
+cminus = np.array([-0.2,-.1,-0.15,-0.25,-0.1])
+cplus  = np.array([ 0.2, .1, 0.15, 0.25, 0.1])
 
 #spatial dimension
 d=2
@@ -43,7 +45,9 @@ f = lambda t: np.array([0,0,  0,0,  0,0,  0,0])
 example1 = ElastoplasticProcess(Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rho, f)
 
 (T,XI,E) = example1.solve(xi0, e0, t0, dt, nsteps)
-print(T.max())
+plt.plot(T,E.T)
+SpringsView(T,XI,E, example1,((-3,3),(-1,7)))
+
 
 
 

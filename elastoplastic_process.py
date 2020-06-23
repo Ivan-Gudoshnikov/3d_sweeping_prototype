@@ -83,6 +83,34 @@ class ElastoplasticProcess:
         #external forces
         self.f=f
 
+        self.connections=[]
+        for i in range(self.m):
+            spring_tuple = (np.where(self.Q[:, i] == 1)[0][0], np.where(self.Q[:, i] == -1)[0][0])
+            self.connections.append(spring_tuple)
+
+
+    def get_connections(self):
+        return self.connections
+    def get_Q(self):
+        return self.Q
+    def get_A(self):
+        return self.A
+    def get_Ainv(self):
+        return self.Ainv
+    def get_m(self):
+        return self.m
+    def get_n(self):
+        return self.n
+    def get_d(self):
+        return self.d
+    def get_q(self):
+        return self.q
+    def get_stress_bounds(self):
+        return (self.cminus, self.cplus)
+    def get_elastic_bounds(self):
+        return (np.matmul(self.Ainv, self.cminus), np.matmul(self.Ainv, self.cplus))
+
+
     def phi(self, xi):
         """
         Lengths of springs
@@ -262,7 +290,7 @@ class ElastoplasticProcess:
         N = box.normal_cone(self.A, e).N
 
         if N is not None:
-            u_basis=self.u_basis(xi,t)
+            u_basis = self.u_basis(xi,t)
             Aeq = np.hstack((u_basis, -N))
             beq = dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t))
             l_size = N.shape[1]
@@ -288,7 +316,7 @@ class ElastoplasticProcess:
         e_1 = self.moving_set(xi_0, t_1, ).projection(self.A,
                                                     e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
                                                     McGibbonQuadprog())
-        dot_e=(e_1-e_0)/dt
+        dot_e = (e_1-e_0)/dt
         (dot_xi, dot_p) = self.dot_xi_and_p(xi_0, t_0, e_0, dot_e)
         xi_1 = xi_0 + dt*dot_xi
         return xi_1, e_1
