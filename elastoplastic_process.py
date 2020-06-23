@@ -348,8 +348,7 @@ class ElastoplasticProcess:
             X[:,i+1] = self.phi(xi_1)
             P[:, i+1] = X[:,i+1] - E[:,i+1]
 
-
-        return (T, XI, E, X, P)
+        return T, XI, E, X, P
 
 
 
