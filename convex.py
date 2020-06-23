@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import scipy.optimize
 
 from quadprog_interface import QuadprogInterface, McGibbonQuadprog
 
@@ -82,8 +83,14 @@ class Polytope(ConvexSet):
         # 1/2 proj^T.H.proj + (- H.x)^T.proj
         #  1/2 x^T.H.x + c^T.x
 
-        x = method.quadprog(H, -np.matmul(H,x), self.A, self.b, self.Aeq, self.beq)
+        x, active = method.quadprog(H, -np.matmul(H,x), self.A, self.b, self.Aeq, self.beq)
         return x
+
+    def linprog(self, c):
+        result = scipy.optimize.linprog(c, self.A, self.b, self.Aeq, self.beq)
+        if not result[2]:
+            raise NameError("Can't do linprog, errorcode", result[6])
+        return result[0]
 
     def __contains__(self, x):
         if x.shape[0]!=self.n:
@@ -165,47 +172,54 @@ def test_polytope_projection():
     poly1=Polytope(A,b,Aeq,beq)
 
     H1=np.identity(3)
-    x1=np.array([2, 0.1, -0.1])
-    print(poly1.projection(H1,x1,McGibbonQuadprog()))
+    x=np.array([2, 0.1, -0.1])
+    p,a = poly1.projection(H1,x,McGibbonQuadprog())
+    print(p,a)
 
-    x2=np.array([0.1, 10, 3])
-    print(poly1.projection(H1, x2, McGibbonQuadprog()))
+    x=np.array([0.1, 10, 3])
+    p, a = poly1.projection(H1, x, McGibbonQuadprog())
+    print(p, a)
 
-    x3=np.array([-0.2, -0.1, 3])
-    print(poly1.projection(H1, x3, McGibbonQuadprog()))
+    x=np.array([-0.2, -0.1, 3])
+    p, a = poly1.projection(H1, x, McGibbonQuadprog())
+    print(p, a)
 
-    x4 = np.array([-10, -10, -10])
-    print(poly1.projection(H1, x4, McGibbonQuadprog()))
+    x = np.array([-10, -10, -10])
+    p, a = poly1.projection(H1, x, McGibbonQuadprog())
+    print(p, a)
+
 
     print("--------")
-    box1=Box(bmin=np.array([-5.,-5.]), bmax=np.array([1.,2.]))
+    box1 = Box(bmin=np.array([-5.,-5.]), bmax=np.array([1.,2.]))
     H2=np.diag([1.,1.])
 
-    x1=np.array([2,3])
-    p1=box1.projection(H2, x1, McGibbonQuadprog())
-    print(p1)
-    print(box1.normal_cone(H2,p1).N)
+    x=np.array([2,3])
+    p, a=box1.projection(H2, x, McGibbonQuadprog())
+    print(p, a)
+    print(box1.normal_cone(H2,p).N)
 
-    x2=np.array([-6,-10])
-    p2 = box1.projection(H2, x2, McGibbonQuadprog())
-    print(p2)
-    print(box1.normal_cone(H2, p2).N)
-
-    x3=np.array([-6,7])
-    p3 = box1.projection(H2, x3, McGibbonQuadprog())
-    print(p3)
-    print(box1.normal_cone(H2, p3).N)
+    x=np.array([-6,-10])
+    p, a = box1.projection(H2, x, McGibbonQuadprog())
+    print(p, a)
+    print(box1.normal_cone(H2, p).N)
 
 
-    x4=np.array([0.1,0.1])
-    p4 = box1.projection(H2, x4, McGibbonQuadprog())
-    print(p4)
-    print(box1.normal_cone(H2, p4).N)
+    x=np.array([-6,7])
+    p, a = box1.projection(H2, x, McGibbonQuadprog())
+    print(p, a)
+    print(box1.normal_cone(H2, p).N)
 
-    x5=np.array([10,0.21])
-    p5 = box1.projection(H2, x5, McGibbonQuadprog())
-    print(p5)
-    print(box1.normal_cone(H2, p5).N)
+
+    x=np.array([0.1,0.1])
+    p, a = box1.projection(H2, x, McGibbonQuadprog())
+    print(p, a)
+    print(box1.normal_cone(H2, p).N)
+
+
+    x=np.array([10,0.21])
+    p, a = box1.projection(H2, x, McGibbonQuadprog())
+    print(p, a)
+    print(box1.normal_cone(H2, p).N)
 
 
 if __name__ == "__main__":

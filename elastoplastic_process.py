@@ -275,7 +275,7 @@ class ElastoplasticProcess:
         #beq = - np.matmul(Aeq, np.matmul(self.u_basis(xi, t), self.h_u_coords(xi, t)))
 
         Aeq = self.p_u_coords(xi, t)
-        beq = -self.h_u_coords(xi, t, self.f(t))
+        beq = self.h_u_coords(xi, t, self.f(t))
 
         return Polytope(A, b, Aeq, beq)
 
@@ -299,12 +299,16 @@ class ElastoplasticProcess:
             A = np.hstack((np.zeros((l_size,dim_u)), - np.identity(l_size)))
             b = np.zeros(l_size)
 
-            #TODO: alternative ways to find \dot xi from its constraints?
-            u_and_l = McGibbonQuadprog().quadprog(np.identity(dim_u+l_size), np.zeros(dim_u+l_size), A, b, Aeq, beq)
-            u_coords = u_and_l[range(0, dim_u)]
-            dot_p = np.matmul(N, u_and_l[range(dim_u,dim_u+l_size)])
+            #TODO: alternative ways to find \dot xi from its constraints?\
+            param_set = Polytope(A,b, Aeq,beq)
+
+            u_and_l_params = param_set.projection(np.identity(dim_u+l_size), np.zeros(dim_u+l_size), McGibbonQuadprog())
+            #u_and_l_params = param_set.linprog(np.hstack((np.zeros(dim_u), np.ones(l_size)))) #linprog is actually more strict
+
+            u_coords = u_and_l_params[range(0, dim_u)]
+            dot_p = np.matmul(N, u_and_l_params[range(dim_u,dim_u+l_size)])
         else:
-            #if dot p = 0 we have  - dot x = - dot e in U + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)) du to sweeping process
+            #if dot p = 0 we have  - dot x = - dot e in U + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)) due to sweeping process
             # take projection to fund u-coords
             u_coords = np.matmul(self.p_u_coords(xi, t), dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)))
             dot_p = np.zeros(self.m)

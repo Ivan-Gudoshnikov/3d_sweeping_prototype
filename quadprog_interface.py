@@ -76,5 +76,10 @@ class McGibbonQuadprog(QuadprogInterface):
             b_qp = - np.hstack((beq, b))
             meq_qp = Aeq.shape[0]
 
-        result_qp = mcgibbon_quadprog.solve_qp(G_qp, a_qp, C_qp, b_qp, meq_qp)
-        return result_qp[0]
+        (x_qp, f_qp, xu_qp, iter_qp, lag_qp, iact_qp) = mcgibbon_quadprog.solve_qp(G_qp, a_qp, C_qp, b_qp, meq_qp)
+
+        #active = iact_qp[iact_qp >= meq_qp]-meq_qp
+        if 0 in iact_qp:
+            raise NameError("kukuku")
+
+        return x_qp, iact_qp
