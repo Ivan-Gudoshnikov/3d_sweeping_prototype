@@ -133,7 +133,7 @@ class Box(Polytope):
                 active[i] = -1
         return active
 
-    def normal_cone(self, H, x):
+    def normal_cone(self, H, x, eps=None):
         """
         H actually don't matter for a box
         :param H:
@@ -146,7 +146,7 @@ class Box(Polytope):
         n=x.shape[0]
         N = None
 
-        active = self.get_active_box_faces(x)
+        active = self.get_active_box_faces(x,eps)
 
         for i in range(n):
             if active[i] == 1:
