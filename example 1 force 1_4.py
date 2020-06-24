@@ -44,7 +44,15 @@ example1 = ElastoplasticProcess(Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rh
 
 
 (T, XI, E, X, P, N, DOT_P_CONE_COORDS) = example1.solve(xi0, e0, t0, dt, nsteps)
-plt.plot(T,E.T)
+
+figE, axE = plt.subplots()
+axE.plot(T, E.T)
+axE.set(title="E")
+
+figP, axP = plt.subplots()
+axP.plot(T, P.T)
+axP.set(title="P")
+
 SpringsView(T,XI,E, example1,((-3,3),(-1,7)))
 
 plt.show()

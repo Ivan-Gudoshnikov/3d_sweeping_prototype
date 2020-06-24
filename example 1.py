@@ -45,7 +45,22 @@ f = lambda t: np.array([0,0,  0,0,  0,0,  0,0])
 example1 = ElastoplasticProcess(Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rho, f)
 
 (T, XI, E, X, P, N, DOT_P_CONE_COORDS) = example1.solve(xi0, e0, t0, dt, nsteps)
-plt.plot(T,E.T)
+
+figE, axE = plt.subplots()
+axE.plot(T, E.T)
+axE.set(title="E")
+
+figP, axP = plt.subplots()
+axP.plot(T, P.T)
+axP.set(title="P")
+
+discrep = example1.discrepancies_in_solution(T, XI, E, X, P, N, DOT_P_CONE_COORDS)
+
+figP_err, axP_err = plt.subplots()
+axP_err.plot(T, discrep.T)
+axP_err.set(title="P ERROR")
+
+
 SpringsView(T, XI, E, example1,((-3,3),(-1,7)))
 
 plt.show()

@@ -369,6 +369,16 @@ class ElastoplasticProcess:
             sys.stdout.flush()
         return T, XI, E, X, P, N, DOT_P_CONE_COORDS
 
+    def discrepancies_in_solution(self, T,XI,E,X, P, N, DOT_P_CONE_COORDS):
+        nsteps=(T.shape[0])-1
+        P_err=np.zeros((self.m, nsteps+1))
+        for i in range(nsteps):
+            P_err[:,i] = None if N[i] is None else (P[:,i+1]-P[:,i])/(T[i+1]-T[i]) - np.matmul(N[i], DOT_P_CONE_COORDS[i])
+
+        return P_err
+
+
+
 
 
 
