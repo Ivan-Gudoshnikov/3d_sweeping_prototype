@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import scipy
 from convex import Polytope, Box
@@ -286,7 +288,10 @@ class ElastoplasticProcess:
         :param t:
         :param e:
         :param dot_e:
-        :return:
+        :return: (dot_xi, cone , dot_p_cone_coords),
+        cone - active normals to the box
+        dot_p_cone_coords is the decomposition of dot_p in terms the active normals
+
         """
         N = self.e_bounds_box.normal_cone(self.A, e).N
 
@@ -306,13 +311,13 @@ class ElastoplasticProcess:
             #u_and_l_params = param_set.linprog(np.hstack((np.zeros(dim_u), np.ones(l_size)))) #linprog is actually more strict
 
             u_coords = u_and_l_params[range(0, dim_u)]
-            dot_p = np.matmul(N, u_and_l_params[range(dim_u,dim_u+l_size)])
+            dot_p_cone_coords = u_and_l_params[range(dim_u,dim_u+l_size)]
         else:
             #if dot p = 0 we have  - dot x = - dot e in U + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)) due to sweeping process
             # take projection to fund u-coords
             u_coords = np.matmul(self.p_u_coords(xi, t), dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)))
-            dot_p = np.zeros(self.m)
-        return np.matmul(self.ker_d_xi_rho(xi, t), u_coords) - np.matmul(self.R(xi,t), self.d_t_rho(xi,t)), dot_p
+            dot_p_cone_coords = None
+        return np.matmul(self.ker_d_xi_rho(xi, t), u_coords) - np.matmul(self.R(xi,t), self.d_t_rho(xi,t)), N, dot_p_cone_coords
 
     def solve_system_step(self, xi_0, e_0, t_0, dt):
         t_1 = t_0+dt
@@ -322,16 +327,19 @@ class ElastoplasticProcess:
                                                     e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
                                                     McGibbonQuadprog())
         dot_e = (e_1-e_0)/dt
-        (dot_xi, dot_p) = self.dot_xi_and_p(xi_0, t_0, e_0, dot_e)
+        (dot_xi, cone, dot_p_cone_coords) = self.dot_xi_and_p(xi_0, t_0, e_0, dot_e)
         xi_1 = xi_0 + dt*dot_xi
-        return xi_1, e_1
+        return xi_1, e_1, cone, dot_p_cone_coords
 
     def solve(self, xi0,e0,t0, dt, nsteps):
+        print("Starting the problem with m =", self.m, ", n =", self.n, ", d =", self.d, ", q = ", self.q)
         T =  np.zeros(nsteps+1)
         XI = np.zeros((self.n*self.d, nsteps+1))
         E = np.zeros((self.m, nsteps + 1))
         X = np.zeros((self.m, nsteps + 1))
         P = np.zeros((self.m, nsteps + 1))
+        N=[]
+        DOT_P_CONE_COORDS=[]
 
         T[0] = t0
         XI[:,0] = xi0[:]
@@ -345,14 +353,21 @@ class ElastoplasticProcess:
             e_0  = E[:,i]
 
             t_1=t_0+dt
-            (xi_1,e_1)=self.solve_system_step(xi_0, e_0, t_0, dt)
+            try:
+                (xi_1,e_1,cone,  dot_p_cone_coords)=self.solve_system_step(xi_0, e_0, t_0, dt)
+            except ValueError:
+                raise NameError("Can't perform a step number "+str(i))
             T[i+1] = t_1
             XI[:,i+1] = xi_1
             E[:,i+1] = e_1
             X[:,i+1] = self.phi(xi_1)
             P[:, i+1] = X[:,i+1] - E[:,i+1]
+            N.append(cone)
+            DOT_P_CONE_COORDS.append(dot_p_cone_coords)
 
-        return T, XI, E, X, P
+            sys.stdout.write("\r Completed step "+str(i+1)+" of "+ str(nsteps))
+            sys.stdout.flush()
+        return T, XI, E, X, P, N, DOT_P_CONE_COORDS
 
 
 

@@ -123,7 +123,7 @@ print(xi1)
 print("e1=")
 print(e1)
 
-(T,XI,E) = example1.solve(xi0,e0,t0, dt, nsteps)
+(T, XI, E, X, P, N, DOT_P_CONE_COORDS) = example1.solve(xi0,e0,t0, dt, nsteps)
 print(T.max())
 
 
