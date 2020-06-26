@@ -150,122 +150,121 @@ class ElastoplasticProcess:
 
         return tensor_to_matrix(np.multiply(N2, Q2))
 
-    def ker_d_xi_rho(self, xi, t):
+    def ker_d_xi_rho(self, d_xi_rho):
         """
         basis in the nullspace of d_xi_rho
-        :param xi:
-        :param t:
+        :param d_xi_rho: value of the derivative
         :return:  (nd)x(dim Ker d_xi_rho) array
         """
-        return scipy.linalg.null_space(self.d_xi_rho(xi, t))
+        return scipy.linalg.null_space(d_xi_rho)
 
-    def ker_d_xi_phi(self, xi):
+    def ker_d_xi_phi(self, d_xi_phi):
         """
         basis in the nullspace of d_xi_phi
-        :param xi:
+        :param d_xi_phi: value of the derivaltive
         :return: (nd)x(dim Ker d_xi_phi) array
         """
-        return scipy.linalg.null_space(self.d_xi_phi(xi))
+        return scipy.linalg.null_space(d_xi_phi)
 
-    def H(self,xi,t):
+    def H(self, d_xi_phi, d_xi_rho):
         """
-        :param xi:
-        :param t:
+        :param d_xi_phi
+        :param d_xi_rho
         :return: external force term minus the reactions of rho
         """
         # Take the "upper" part of the pseudo-inverse matrix of the combined  matrix [(d_xi_phi)^T  (d_xi_rho)^T], which is of full row rank
 
-        M1 = self.d_xi_phi(xi).T
-        M2 = self.d_xi_rho(xi, t).T
+        M1 = d_xi_phi.T
+        M2 = d_xi_rho.T
         return np.linalg.pinv(np.hstack((M1,M2)))[range(0,self.m), :]
 
 
-    def dim_intersection_nullspaces(self, xi):
+    def dim_intersection_nullspaces(self, d_xi_phi, d_xi_rho):
         """
         should always be 0!
-        :param xi:
+        :param d_xi_phi
+        :param d_xi_rho
         :return:
         """
-        return self.n*self.d- np.linalg.matrix_rank(np.vstack((self.d_xi_rho(xi, 0), self.d_xi_phi(xi))))
+        return self.n*self.d - np.linalg.matrix_rank(np.vstack((d_xi_rho, d_xi_phi)))
 
-    def u_basis(self,xi,t):
+    def u_basis(self, d_xi_phi, d_xi_rho):
         """
         A very spceific, generally not orthogonal, basis in U, such that
         the coordinates of u\in U  in it are the same as the coordinates in L^{-1}u in the ker_d_xi_rho basis
-        :param xi:
-        :param t:
+        :param d_xi_phi
+        :param d_xi_rho
         :return:
         """
-        result = np.matmul(self.d_xi_phi(xi), self.ker_d_xi_rho(xi, t))
+        result = np.matmul(d_xi_phi, self.ker_d_xi_rho(d_xi_rho))
         if np.linalg.matrix_rank(result) != self.n*self.d - self.q:
             raise NameError("Constraint rho is not enough for that phi(xi)")
         return result
 
-    def v_basis(self, xi, t):
-        return scipy.linalg.null_space(np.matmul(self.A, self.u_basis(xi,t)).T)
+    def v_basis(self, d_xi_phi, d_xi_rho):
+        return scipy.linalg.null_space(np.matmul(self.A, self.u_basis(d_xi_phi, d_xi_rho)).T)
 
 
-    def R(self,xi,t):
-        return np.linalg.pinv(self.d_xi_rho(xi,t))
+    def R(self, d_xi_rho):
+        return np.linalg.pinv(d_xi_rho)
 
-    def p_u_coords(self,xi,t):
+    def p_u_and_p_v_coords(self,d_xi_phi, d_xi_rho):
+        """
+        To compute together is more efficient
+        :param d_xi_phi:
+        :param d_xi_rho:
+        :return:
+        """
+        M1 = self.u_basis(d_xi_phi, d_xi_rho)
+        M2 = self.v_basis(d_xi_phi, d_xi_rho)
+        inv = np.linalg.inv(np.hstack((M1, M2)))
+        return inv[range(0, M1.shape[1]), :], inv[range(M1.shape[1],self.m),:]
+
+    def p_u_coords(self, d_xi_phi, d_xi_rho):
         """
         Projection matrix on U(xi,t) orthogonal to V(xi,t), in terms of coordinates in u_basis
-        Inefficient as a separate calculation, but this is a prototype
-        :param xi:
-        :param t:
+        Inefficient as a separate calculation if both p_u, p_v are computed
+        :param d_xi_phi
+        :param d_xi_rho
         :return:
         """
-        M1=self.u_basis(xi, t)
-        M2=self.v_basis(xi, t)
+        return self.p_u_and_p_v_coords(d_xi_phi,d_xi_rho)[0]
 
-        inv= np.linalg.inv(np.hstack((M1,M2)))
-        return inv[range(0, M1.shape[1]),:]
-
-
-
-    def p_v_coords(self, xi, t):
+    def p_v_coords(self, d_xi_phi, d_xi_rho):
         """
         Projection matrix on V(xi,t) orthogonal to U(xi,t), in terms of coordinates in terms of v_basis
-        :param xi:
-        :param t:
+        Inefficient as a separate calculation if both p_u, p_v are computed
+        :param d_xi_phi
+        :param d_xi_rho
         :return:
         """
-        M1=self.u_basis(xi, t)
-        M2=self.v_basis(xi, t)
+        return self.p_u_and_p_v_coords(d_xi_phi,d_xi_rho)[1]
 
-        inv= np.linalg.inv(np.hstack((M1,M2)))
-        return inv[range(M1.shape[1],self.m),:]
-
-    def g_v_coords(self,xi,t):
+    def g_v_coords(self, p_v_coords, d_xi_phi, R, d_t_rho):
         """
         Function g expressed in the coordinates of v_basis
-        :param xi:
-        :param t:
+        The arguments are like this to allow computation without repetitions
+        :param p_v_coords:
+        :param d_xi_phi:
+        :param R
+        :param d_t_rho
         :return:
         """
-        return np.matmul(np.matmul(np.matmul(self.p_v_coords(xi,t), self.d_xi_phi(xi)), self.R(xi,t)), self.d_t_rho(xi,t))
 
-    def h_u_coords(self,xi,t, fval):
+        return np.matmul(np.matmul(np.matmul(p_v_coords, d_xi_phi), R), d_t_rho)
+
+    def h_u_coords(self, p_u_coords, H, fval):
         """
         Function h expressed in the coordinates of u_basis
-        :param xi:
-        :param t:
+        The arguments are like this to allow computation without repetitions
+        :param p_u_coords
+        :param H
         :param fval: external forces vector of the size (nd)
         :return:
         """
-        return np.matmul(np.matmul(np.matmul(self.p_u_coords(xi,t), self.Ainv),self.H(xi,t)), fval)
+        return np.matmul(np.matmul(np.matmul(p_u_coords, self.Ainv), H), fval)
 
-    def v_orth(self,xi,t):
-        """
-        Set of constraints which define V
-        :param xi:
-        :param t:
-        :return:
-        """
-        return scipy.linalg.null_space(self.v_basis(xi,t).T).T
-
-    def moving_set(self, xi, t):
+    def moving_set(self, p_u_coords, h_u_coords):
         """
         :param xi:
         :param t:
@@ -273,17 +272,15 @@ class ElastoplasticProcess:
         """
         A = np.vstack((self.A, -self.A))
         b = np.hstack((self.cplus, -self.cminus))
-        #Aeq = self.v_orth(xi, t)
-        #beq = - np.matmul(Aeq, np.matmul(self.u_basis(xi, t), self.h_u_coords(xi, t)))
 
-        Aeq = self.p_u_coords(xi, t)
-        beq = self.h_u_coords(xi, t, self.f(t))
+        Aeq = p_u_coords
+        beq = h_u_coords
 
         return Polytope(A, b, Aeq, beq)
 
-    def dot_xi_and_p(self, xi, t, e, dot_e):
+    def dot_xi_and_p(self, e, dot_e, d_xi_phi, R, d_t_rho, u_basis, ker_d_xi_rho, p_u_coords):
         """
-        part of the formula for dot xi, whic gives u - component
+        part of the formula for dot xi, which gives u - component
         :param xi:
         :param t:
         :param e:
@@ -296,9 +293,8 @@ class ElastoplasticProcess:
         N = self.e_bounds_box.normal_cone(self.A, e).N
 
         if N is not None:
-            u_basis = self.u_basis(xi,t)
             Aeq = np.hstack((u_basis, -N))
-            beq = dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t))
+            beq = dot_e + np.matmul(np.matmul(d_xi_phi, R,), d_t_rho)
             l_size = N.shape[1]
             dim_u = u_basis.shape[1]
             A = np.hstack((np.zeros((l_size,dim_u)), - np.identity(l_size)))
@@ -315,19 +311,47 @@ class ElastoplasticProcess:
         else:
             #if dot p = 0 we have  - dot x = - dot e in U + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)) due to sweeping process
             # take projection to fund u-coords
-            u_coords = np.matmul(self.p_u_coords(xi, t), dot_e + np.matmul(np.matmul(self.d_xi_phi(xi), self.R(xi,t)), self.d_t_rho(xi,t)))
+            u_coords = np.matmul(p_u_coords, dot_e + np.matmul(np.matmul(d_xi_phi, R), d_t_rho))
             dot_p_cone_coords = None
-        return np.matmul(self.ker_d_xi_rho(xi, t), u_coords) - np.matmul(self.R(xi,t), self.d_t_rho(xi,t)), N, dot_p_cone_coords
+        return np.matmul(ker_d_xi_rho, u_coords) - np.matmul(R, d_t_rho), N, dot_p_cone_coords
 
-    def solve_system_step(self, xi_0, e_0, t_0, dt):
+    def solve_system_step_naive(self, xi_0, e_0, t_0, dt):
         t_1 = t_0+dt
         #see Tahar Haddad. Differential Inclusion Governed by a State Dependent Sweeping Process
         #International Journal of Difference Equations, Volume 8, Number 1, pp. 63–70 (2013)
-        e_1 = self.moving_set(xi_0, t_1, ).projection(self.A,
-                                                    e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
-                                                    McGibbonQuadprog())
+
+
+        d_xi_phi_0 = self.d_xi_phi(xi_0)
+        d_xi_rho_0_0 = self.d_xi_rho(xi_0, t_0)
+        d_xi_rho_0_1 = self.d_xi_rho(xi_0, t_1)
+        p_u_coords_0_1 = self.p_u_coords(d_xi_phi_0, d_xi_rho_0_1)
+
+        H_0_1 = self.H(d_xi_phi_0,d_xi_rho_0_1)
+        h_u_coords_0_1 = self.h_u_coords(p_u_coords_0_1,H_0_1, self.f(t_1))
+
+        moving_set = self.moving_set(p_u_coords_0_1, h_u_coords_0_1)
+
+        v_basis_0_0 = self.v_basis(d_xi_phi_0, d_xi_rho_0_0)
+        R_0_0 = self.R(d_xi_rho_0_0)
+        p_v_coords_0_0 = self.p_v_coords(d_xi_phi_0, d_xi_rho_0_0)
+        d_t_rho_0 = self.d_t_rho(xi_0, t_0)
+        g_v_coords_0_0 = self.g_v_coords(p_v_coords_0_0,d_xi_phi_0,R_0_0,d_t_rho_0)
+
+        e_1 = moving_set.projection(self.A, e_0 - dt*np.matmul(v_basis_0_0, g_v_coords_0_0), McGibbonQuadprog())
+        #Old version:
+        #e_1 = self.moving_set(xi_0, t_1).projection(self.A,
+        #                                            e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
+        #                                            McGibbonQuadprog())
         dot_e = (e_1-e_0)/dt
-        (dot_xi, cone, dot_p_cone_coords) = self.dot_xi_and_p(xi_0, t_0, e_0, dot_e)
+        #Old version:
+        #(dot_xi, cone, dot_p_cone_coords) = self.dot_xi_and_p(xi_0, t_0, e_0, dot_e)
+        u_basis_0_0 = self.u_basis(d_xi_phi_0,d_xi_rho_0_0)
+        ker_d_xi_rho_0_0 = self.ker_d_xi_rho(d_xi_rho_0_0)
+        p_u_coords_0_0 = self.p_u_coords(d_xi_phi_0, d_xi_rho_0_0)
+
+        (dot_xi, cone, dot_p_cone_coords) = self.dot_xi_and_p(e_0, dot_e, d_xi_phi_0, R_0_0, d_t_rho_0, u_basis_0_0,
+                                                              ker_d_xi_rho_0_0, p_u_coords_0_0)
+
         xi_1 = xi_0 + dt*dot_xi
         return xi_1, e_1, cone, dot_p_cone_coords
 
@@ -354,7 +378,7 @@ class ElastoplasticProcess:
 
             t_1=t_0+dt
             try:
-                (xi_1,e_1,cone,  dot_p_cone_coords)=self.solve_system_step(xi_0, e_0, t_0, dt)
+                (xi_1,e_1,cone,  dot_p_cone_coords)=self.solve_system_step_naive(xi_0, e_0, t_0, dt)
             except ValueError:
                 raise NameError("Can't perform a step number "+str(i))
             T[i+1] = t_1

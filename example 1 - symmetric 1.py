@@ -61,6 +61,7 @@ axP_err.plot(T, discrep.T)
 axP_err.set(title="P ERROR")
 
 
+#SpringsView(T,XI,E, example1,((-3,3),(-1,7)), "example 1 symmetric 1.mp4")
 SpringsView(T,XI,E, example1,((-3,3),(-1,7)))
 
 plt.show()

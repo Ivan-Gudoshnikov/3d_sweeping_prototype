@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 
 
 class SpringsView:
-    def __init__(self, T, XI, E, problem: ElastoplasticProcess, lim):
+    def __init__(self, T, XI, E, problem: ElastoplasticProcess, lim, filename=None):
         if problem.get_d()!=2:
             raise NameError("3d networks are not supported yet")
 
@@ -52,3 +52,5 @@ class SpringsView:
             return self.artists
 
         self.ani = animation.FuncAnimation(self.fig, update_animation, init_func=init_animation, frames=self.T.shape[0], interval=1, blit=True, repeat=True)
+        if filename is not None:
+            self.ani.save(filename)

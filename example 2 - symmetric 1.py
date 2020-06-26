@@ -57,6 +57,7 @@ axP.plot(T, P.T)
 axP.set(title="P")
 
 SpringsView(T,XI,E, example1,((-3,3),(-1,8)))
+#SpringsView(T,XI,E, example1,((-3,3),(-1,8)), "example 2 symmetric 1.mp4")
 
 plt.show()
 

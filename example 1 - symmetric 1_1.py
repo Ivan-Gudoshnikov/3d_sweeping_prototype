@@ -11,11 +11,11 @@ Q = np.array([[ 1, 1, 0, 0, 0],
 
 xi0 = np.array([0., 0.,   -1., 1.,   1., 1.,   0, 2.])
 t0 = 0
-dt=0.001
+dt=0.0005
 
 #tmax = 4
 #nsteps= int((tmax-t0)//dt)
-nsteps = 3000
+nsteps = 6000
 
 e0 = np.array([0., 0., 0., 0., 0.])
 
@@ -55,6 +55,7 @@ axP.plot(T, P.T)
 axP.set(title="P")
 
 SpringsView(T,XI,E, example1,((-3,3),(-1,7)))
+#SpringsView(T,XI,E, example1,((-3,3),(-1,7)), "example 1 symmetric 1_1.mp4")
 
 plt.show()
 
