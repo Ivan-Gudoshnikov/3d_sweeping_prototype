@@ -14,7 +14,7 @@ class SpringsView:
         self.T = T
         self.XI = XI
         self.E = E
-        self.problem=problem
+        self.problem = problem
         self.fig, self.ax = plt.subplots()
         self.ax.grid()
         self.ax.set(xlim=lim[0], ylim=lim[1], aspect='equal')
@@ -31,10 +31,14 @@ class SpringsView:
         self.artists = self.springs_lines.copy()
         self.artists.append(self.nodes_markers)
 
+        self.time_text = plt.text(lim[0][0]+0.1,-0.8,"T=")
+        self.artists.append(self.time_text)
+
         def init_animation():
             return self.artists
 
         def update_animation(i):
+            self.time_text.set_text("T="+format(self.T[i], '.6f'))
             xi = vector_to_matrix(self.XI[:, i], self.problem.get_d())
 
             self.nodes_markers.set_data(xi[:,0], xi[:,1])

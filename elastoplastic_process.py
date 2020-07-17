@@ -355,7 +355,139 @@ class ElastoplasticProcess:
         xi_1 = xi_0 + dt*dot_xi
         return xi_1, e_1, cone, dot_p_cone_coords
 
+    def solve_system_step_naive_reference(self, xi_0, e_0, t_0, dt, xi_ref, d_xi_phi, d_xi_rho, p_u_coords, p_v_coords, u_basis, v_basis, H, R, ker_d_xi_rho):
+        t_1 = t_0 + dt
+        h_u_coords=self.h_u_coords(p_u_coords,H, self.f(t_1))
+        moving_set = self.moving_set(p_u_coords, h_u_coords)
+        d_t_rho = self.d_t_rho(xi_ref, t_0)
+        g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
+
+        e_1 = moving_set.projection(self.A, e_0 - dt * np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
+        dot_e = (e_1 - e_0) / dt
+        (dot_xi, cone, dot_p_cone_coords) = self.dot_xi_and_p(e_0, dot_e, d_xi_phi, R, d_t_rho, u_basis, ker_d_xi_rho, p_u_coords)
+        xi_1 = xi_0 + dt * dot_xi
+
+        return xi_1, e_1, cone, dot_p_cone_coords
+
+
+    def solve_fixed_spaces_e_only(self, xi0, e0,t0, dt, nsteps, xi_ref, t_ref):
+        print("Starting the fixed spaces problem with m =", self.m, ", n =", self.n, ", d =", self.d, ", q = ", self.q)
+        T = np.zeros(nsteps + 1)
+        E = np.zeros((self.m, nsteps + 1))
+        T[0] = t0
+        E[:, 0] = e0[:]
+
+        d_xi_phi = self.d_xi_phi(xi_ref)
+        d_xi_rho = self.d_xi_rho(xi_ref, t_ref)
+        [p_u_coords, p_v_coords] = self.p_u_and_p_v_coords(d_xi_phi, d_xi_rho)
+        u_basis = self.u_basis(d_xi_phi, d_xi_rho)
+        v_basis = self.v_basis(d_xi_phi, d_xi_rho)
+        print(np.linalg.matrix_rank(v_basis))
+        H = self.H(d_xi_phi, d_xi_rho)
+        R = self.R(d_xi_rho)
+        ker_d_xi_rho = self.ker_d_xi_rho(d_xi_rho)
+
+        for i in range(nsteps):
+            t_0  = T[i]
+            e_0  = E[:, i]
+            t_1=t_0+dt
+
+            try:
+                h_u_coords = self.h_u_coords(p_u_coords, H, self.f(t_1))
+                moving_set = self.moving_set(p_u_coords, h_u_coords)
+                d_t_rho = self.d_t_rho(xi_ref, t_0)
+                g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
+                e_1 = moving_set.projection(self.A, e_0 - dt * np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
+            except ValueError:
+                raise NameError("Can't perform a step number "+str(i))
+            T[i+1] = t_1
+            E[:,i+1] = e_1
+            sys.stdout.write("\r Completed step "+str(i+1)+" of "+ str(nsteps))
+            sys.stdout.flush()
+        return T, E
+
+
+
+
+
+    def solve_fixed_spaces(self, xi0,e0,t0, dt, nsteps, xi_ref, t_ref):
+        """
+        :param xi0:
+        :param e0:
+        :param t0:
+        :param dt:
+        :param nsteps:
+        :param xi_ref:
+        :param t_ref:
+        :return:
+        """
+        print("Starting the fixed spaces problem with m =", self.m, ", n =", self.n, ", d =", self.d, ", q = ", self.q)
+        T =  np.zeros(nsteps+1)
+        XI = np.zeros((self.n*self.d, nsteps+1))
+        E = np.zeros((self.m, nsteps + 1))
+        X = np.zeros((self.m, nsteps + 1))
+        P = np.zeros((self.m, nsteps + 1))
+        P_ALT=np.zeros((self.m, nsteps + 1))
+        N=[]
+        DOT_P_CONE_COORDS=[]
+
+        T[0] = t0
+        XI[:,0] = xi0[:]
+        E[:,0] = e0[:]
+        X[:,0] = self.phi(xi0)
+        P[:,0] = X[:,0] - E[:,0]
+        P_ALT[:,0] = X[:,0] - E[:,0]
+
+
+
+        d_xi_phi = self.d_xi_phi(xi_ref)
+        d_xi_rho = self.d_xi_rho(xi_ref, t_ref)
+        [p_u_coords, p_v_coords] = self.p_u_and_p_v_coords(d_xi_phi, d_xi_rho)
+        u_basis = self.u_basis(d_xi_phi, d_xi_rho)
+        v_basis = self.v_basis(d_xi_phi, d_xi_rho)
+        H = self.H(d_xi_phi, d_xi_rho)
+        R = self.R(d_xi_rho)
+        ker_d_xi_rho = self.ker_d_xi_rho(d_xi_rho)
+
+        for i in range(nsteps):
+            t_0  = T[i]
+            xi_0 = XI[:, i]
+            e_0  = E[:, i]
+            t_1=t_0+dt
+
+            try:
+                (xi_1, e_1, cone, dot_p_cone_coords) = self.solve_system_step_naive_reference(xi_0, e_0, t_0, dt, xi_ref, d_xi_phi, d_xi_rho, p_u_coords, p_v_coords, u_basis, v_basis, H, R, ker_d_xi_rho)
+            except ValueError:
+                raise NameError("Can't perform a step number "+str(i))
+            T[i+1] = t_1
+            XI[:,i+1] = xi_1
+            E[:,i+1] = e_1
+            X[:,i+1] = self.phi(xi_1)
+            P[:, i+1] = X[:,i+1] - E[:,i+1]
+            N.append(cone)
+            DOT_P_CONE_COORDS.append(dot_p_cone_coords)
+            if cone is None:
+                P_ALT[:, i+1] = P_ALT[:,i]
+            else:
+                P_ALT[:, i+1] = P_ALT[:,i] + dt*np.matmul(cone, dot_p_cone_coords)
+
+            sys.stdout.write("\r Completed step "+str(i+1)+" of "+ str(nsteps))
+            sys.stdout.flush()
+        return T, XI, E, X, P, N, DOT_P_CONE_COORDS, P_ALT
+
+
+
     def solve(self, xi0,e0,t0, dt, nsteps):
+        """
+        :param xi0:
+        :param e0:
+        :param t0:
+        :param dt:
+        :param nsteps:
+        :param xi_ref: If note none will use as a fixed reference state
+        :param t_ref: reference time for to compute d_xi_rho
+        :return:
+        """
         print("Starting the problem with m =", self.m, ", n =", self.n, ", d =", self.d, ", q = ", self.q)
         T =  np.zeros(nsteps+1)
         XI = np.zeros((self.n*self.d, nsteps+1))
@@ -378,7 +510,7 @@ class ElastoplasticProcess:
 
             t_1=t_0+dt
             try:
-                (xi_1,e_1,cone,  dot_p_cone_coords)=self.solve_system_step_naive(xi_0, e_0, t_0, dt)
+                (xi_1, e_1, cone, dot_p_cone_coords) = self.solve_system_step_naive(xi_0, e_0, t_0, dt)
             except ValueError:
                 raise NameError("Can't perform a step number "+str(i))
             T[i+1] = t_1
@@ -392,6 +524,7 @@ class ElastoplasticProcess:
             sys.stdout.write("\r Completed step "+str(i+1)+" of "+ str(nsteps))
             sys.stdout.flush()
         return T, XI, E, X, P, N, DOT_P_CONE_COORDS
+
 
     def discrepancies_in_solution(self, T,XI,E,X, P, N, DOT_P_CONE_COORDS):
         nsteps=(T.shape[0])-1
