@@ -31,19 +31,20 @@ class SquareGrid:
 
         self.d = 2
 
-        self.nodes = np.zeros((n1,n2)).astype(int)
-
+        self.node_id_by_coord = np.zeros((n1, n2)).astype(int)
+        self.node_coord_by_id = []
         self.connections = []
 
         k = 0
         for i in range(n1):
             for j in range(n2):
-                self.nodes[i, j] = k
+                self.node_id_by_coord[i, j] = k
+                self.node_coord_by_id.append((i,j))
                 k = k + 1
 
         self.n = k
         self.xi = np.zeros(self.n * self.d)
-        k = 0
+        k = 0 #position in xi
         for i in range(n1):
             for j in range(n2):
                 self.xi[k] = i * delta_x
@@ -56,42 +57,42 @@ class SquareGrid:
         for i in range(n1-1):
             for j in range(n2-1):
                 #bottom neighbour
-                self.Q[self.nodes[i, j], k]=1
-                self.Q[self.nodes[i, j+1], k] = -1
-                self.connections.append((self.nodes[i, j], self.nodes[i, j+1]))
+                self.Q[self.node_id_by_coord[i, j], k]=1
+                self.Q[self.node_id_by_coord[i, j + 1], k] = -1
+                self.connections.append((self.node_id_by_coord[i, j], self.node_id_by_coord[i, j + 1]))
                 k = k + 1
 
 
                 #right neighbour
-                self.Q[self.nodes[i, j], k] = 1
-                self.Q[self.nodes[i+1, j], k] = -1
-                self.connections.append((self.nodes[i, j], self.nodes[i+1, j]))
+                self.Q[self.node_id_by_coord[i, j], k] = 1
+                self.Q[self.node_id_by_coord[i + 1, j], k] = -1
+                self.connections.append((self.node_id_by_coord[i, j], self.node_id_by_coord[i + 1, j]))
                 k = k + 1
 
                 #right-bottom neighbour
-                self.Q[self.nodes[i, j], k] = 1
-                self.Q[self.nodes[i + 1, j + 1], k] = -1
-                self.connections.append((self.nodes[i, j], self.nodes[i + 1, j + 1]))
+                self.Q[self.node_id_by_coord[i, j], k] = 1
+                self.Q[self.node_id_by_coord[i + 1, j + 1], k] = -1
+                self.connections.append((self.node_id_by_coord[i, j], self.node_id_by_coord[i + 1, j + 1]))
                 k = k + 1
 
                 # right-to-bottom connection
-                self.Q[self.nodes[i, j + 1], k] = 1
-                self.Q[self.nodes[i + 1, j], k] = -1
-                self.connections.append((self.nodes[i, j + 1], self.nodes[i + 1, j]))
+                self.Q[self.node_id_by_coord[i, j + 1], k] = 1
+                self.Q[self.node_id_by_coord[i + 1, j], k] = -1
+                self.connections.append((self.node_id_by_coord[i, j + 1], self.node_id_by_coord[i + 1, j]))
                 k = k + 1
 
         for i in range(n1-1):
             #right connection
-            self.Q[self.nodes[i, n2-1], k] = 1
-            self.Q[self.nodes[i + 1, n2-1], k] = -1
-            self.connections.append((self.nodes[i, n2-1], self.nodes[i + 1, n2-1]))
+            self.Q[self.node_id_by_coord[i, n2 - 1], k] = 1
+            self.Q[self.node_id_by_coord[i + 1, n2 - 1], k] = -1
+            self.connections.append((self.node_id_by_coord[i, n2 - 1], self.node_id_by_coord[i + 1, n2 - 1]))
             k = k + 1
 
         for j in range(n2 - 1):
             #bottom connection
-            self.Q[self.nodes[n1 - 1, j], k] = 1
-            self.Q[self.nodes[n1 - 1, j + 1], k] = -1
-            self.connections.append((self.nodes[n1 - 1, j], self.nodes[n1 - 1, j + 1]))
+            self.Q[self.node_id_by_coord[n1 - 1, j], k] = 1
+            self.Q[self.node_id_by_coord[n1 - 1, j + 1], k] = -1
+            self.connections.append((self.node_id_by_coord[n1 - 1, j], self.node_id_by_coord[n1 - 1, j + 1]))
             k = k + 1
 
         self.m = k
@@ -100,9 +101,9 @@ class SquareGrid:
         self.cminus = np.zeros(self.m)
         self.cplus = np.zeros(self.m)
         for i in range(self.m):
-            self.a[i] = a_func(self.connections[i])
-            self.cminus[i] = cminus_func(self.connections[i])
-            self.cplus[i] = cplus_func(self.connections[i])
+            self.a[i] = a_func(self.node_coord_by_id[self.connections[i][0]], self.node_coord_by_id[self.connections[i][1]])
+            self.cminus[i] = cminus_func(self.node_coord_by_id[self.connections[i][0]], self.node_coord_by_id[self.connections[i][1]])
+            self.cplus[i] = cplus_func(self.node_coord_by_id[self.connections[i][0]], self.node_coord_by_id[self.connections[i][1]])
 
         #TODO: rho setup API
         #hardcoded rho

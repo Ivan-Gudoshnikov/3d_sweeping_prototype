@@ -56,6 +56,18 @@ def matrix_to_tensor(matrix, d):
 
 class ElastoplasticProcess:
     def __init__(self, Q, a, cminus, cplus, d, q, rho, d_xi_rho, d_t_rho, f):
+        """
+        :param Q: incidence matrix
+        :param a: vector of stiffness values
+        :param cminus: vector of min stresses
+        :param cplus: vector of max stresses
+        :param d: amount of spatial dimensions
+        :param q: amount of rho-constraints
+        :param rho: rho-constraint(displacement boundary condition) - a function of xi,t
+        :param d_xi_rho: Jacobi matrix of rho-constraint w.r.to xi  - a function of xi,t
+        :param d_t_rho: time-derivative of rho-constraint - a fucntion of xi, t with values -  vectos of leg q
+        :param f: external force applied at the nodes - function of t
+        """
         # basic properties
 
         # incidence matrix
@@ -382,7 +394,7 @@ class ElastoplasticProcess:
         [p_u_coords, p_v_coords] = self.p_u_and_p_v_coords(d_xi_phi, d_xi_rho)
         u_basis = self.u_basis(d_xi_phi, d_xi_rho)
         v_basis = self.v_basis(d_xi_phi, d_xi_rho)
-        print(np.linalg.matrix_rank(v_basis))
+        print("dim V = ", np.linalg.matrix_rank(v_basis))
         H = self.H(d_xi_phi, d_xi_rho)
         R = self.R(d_xi_rho)
         ker_d_xi_rho = self.ker_d_xi_rho(d_xi_rho)

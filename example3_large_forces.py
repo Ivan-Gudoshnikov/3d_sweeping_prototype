@@ -5,7 +5,20 @@ import scipy.linalg
 from elastoplastic_process import ElastoplasticProcess
 from springs_view import SpringsView
 
-example3grid = SquareGrid(20,20, 0.5, 0.5, lambda conn: 1., lambda conn: -0.1, lambda conn: 0.1, SquareGrid.HoldLeftStressRight())
+
+n1=20
+n2=20
+def a_func(orig, termin):
+    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
+        return 2. #non-diagonal springs have stiffness 2
+    else:
+        return 1. #diagonal sptings have stiffness 1
+
+cminus_func =  lambda orig, termin: -0.1
+cplus_func = lambda orig, termin: 0.1
+
+
+example3grid = SquareGrid(n1, n2, 0.5, 0.5, a_func, cminus_func,cplus_func, SquareGrid.HoldLeftStressRight())
 
 example3 = example3grid.get_elastoplastic_process()
 t0 = 0
