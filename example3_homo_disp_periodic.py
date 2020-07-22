@@ -7,14 +7,17 @@ from springs_view import SpringsView
 import math
 
 
-n1=5
-n2=5
-def a_func(orig, termin):
-    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
-        return 2. #non-diagonal springs have stiffness 2
-    else:
-        return 1. #diagonal sptings have stiffness 1
+n1=13
+n2=9
 
+def a_func(orig, termin):
+    base_stiffess = 1
+
+    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
+        stiffness=2*base_stiffess #non-diagonal springs have stiffness 2x
+    else:
+        stiffness=base_stiffess  #diagonal springs have stiffness 1x
+    return stiffness
 
 def cplus_func(orig, termin):
     base_yeld_stress=0.001
@@ -29,15 +32,18 @@ def cplus_func(orig, termin):
 def cminus_func(orig, termin):
     return -cplus_func(orig, termin)
 
-example3grid = SquareGrid(n1, n2, 0.5, 0.5, a_func, cminus_func,cplus_func, SquareGrid.HoldLeftDisplacementRight())
+
+
+
+example3grid = SquareGrid(n1, n2, 0.5, 0.5, a_func, cminus_func,cplus_func, SquareGrid.HoldLeftPeriodicDisplacementRight(rate=0.1, half_period=0.2))
 
 bc=example3grid.HoldLeftDisplacementRight()
 example3 = example3grid.get_elastoplastic_process()
 
 
 t0 = 0
-dt = 0.001
-nsteps = 180
+dt = 0.0001
+nsteps = 12000
 
 xi_ref = example3grid.xi
 t_ref = 0
@@ -49,6 +55,6 @@ axE.set(title="E")
 
 XI = np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
 
+SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example3_homo_disp_periodic.mp4")
 #SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
-SpringsView(T,XI,E, example3,((-3,7),(-1,8)), "movie.mp4", 5)
 plt.show()

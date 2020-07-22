@@ -175,6 +175,48 @@ class SquareGrid:
         def q(self, outer):
             return 2*outer.n2 * outer.d
 
+    class HoldLeftPeriodicDisplacementRight(BoundaryConditions):
+        def __init__(self, rate, half_period):
+            self.rate = rate
+            self.half_period = half_period
+
+        def rho(self, outer, xi, t):
+            raise ValueError("Implementation is incorrect here")
+            tho = np.zeros(outer.d * outer.n2) #alteranting 1 and 0
+            for i in range(outer.n2):
+                tho[2*i] = 1
+
+            return np.hstack((xi[range(outer.d*outer.n2)]-outer.xi[range(outer.d*outer.n2)],
+                             xi[range(outer.d*outer.n - outer.d*outer.n2, outer.d*outer.n)]-outer.xi[range(outer.d*outer.n - outer.d*outer.n2, outer.d*outer.n)] - self.rate*t*tho))
+
+        def d_xi_rho(self, outer, xi, t):
+            M1 = np.zeros((outer.d * outer.n2, outer.d * outer.n))
+            for i in range(outer.d * outer.n2):
+                M1[i, i] = 1
+
+            M2 = np.zeros((outer.d * outer.n2, outer.d * outer.n))
+            for i in range(outer.d * outer.n2):
+                M2[outer.d * outer.n2 - i - 1, outer.d * outer.n - i - 1] = 1
+            return np.vstack((M1, M2))
+
+        def d_t_rho(self,outer, xi, t):
+            if int(t // self.half_period)% 2 == 0:
+                sign = 1
+            else:
+                sign = -1
+
+            dtr = np.zeros(2*outer.d*outer.n2)
+            for i in range(outer.n2):
+                dtr[outer.d*outer.n2+2*i] = sign* self.rate
+            return dtr
+
+        def f(self, outer, t):
+            f = np.zeros(outer.d * outer.n)
+            return f
+
+        def q(self, outer):
+            return 2*outer.n2 * outer.d
+
     def get_elastoplastic_process(self):
         return ElastoplasticProcess(self.Q, self.a, self.cminus, self.cplus, self.d, self.q, self.rho, self.d_xi_rho, self.d_t_rho, self.f)
 

@@ -1,4 +1,4 @@
-import matplotlib
+import matplotlib.colors
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
@@ -7,10 +7,9 @@ import matplotlib.animation as animation
 
 
 class SpringsView:
-    def __init__(self, T, XI, E, problem: ElastoplasticProcess, lim, filename=None):
+    def __init__(self, T, XI, E, problem: ElastoplasticProcess, lim, filename=None, fps=None):
         if problem.get_d()!=2:
             raise NameError("3d networks are not supported yet")
-
         self.T = T
         self.XI = XI
         self.E = E
@@ -19,7 +18,7 @@ class SpringsView:
         self.ax.grid()
         self.ax.set(xlim=lim[0], ylim=lim[1], aspect='equal')
 
-        self.nodes_markers = Line2D([0, 1], [0, 1], marker="o", linestyle="None", markerfacecolor="k",
+        self.nodes_markers = Line2D([0, 1], [0, 1], marker="None", linestyle="None", markerfacecolor="k",
                                     markeredgecolor="k", markersize=5)
         self.ax.add_line(self.nodes_markers)
 
@@ -38,23 +37,37 @@ class SpringsView:
             return self.artists
 
         def update_animation(i):
-            self.time_text.set_text("T="+format(self.T[i], '.6f'))
+            self.time_text.set_text("T=" + format(self.T[i], '.6f'))
             xi = vector_to_matrix(self.XI[:, i], self.problem.get_d())
 
             self.nodes_markers.set_data(xi[:,0], xi[:,1])
-            active = self.problem.e_bounds_box.get_active_box_faces(E[:,i], eps=None) #None means the same eps as in the computations
+            active = self.problem.e_bounds_box.get_active_box_faces(E[:, i], eps=None) #None means the same eps as in the computations
 
-            for i in range(problem.get_m()):
-                xdata = [xi[self.problem.connections[i][0], 0], xi[self.problem.connections[i][1], 0]]
-                ydata = [xi[self.problem.connections[i][0], 1], xi[self.problem.connections[i][1], 1]]
-                self.springs_lines[i].set_data(xdata, ydata)
-                if active[i] == 0:
-                    thickness = 1
+            for j in range(problem.get_m()):
+                xdata = [xi[self.problem.connections[j][0], 0], xi[self.problem.connections[j][1], 0]]
+                ydata = [xi[self.problem.connections[j][0], 1], xi[self.problem.connections[j][1], 1]]
+                self.springs_lines[j].set_data(xdata, ydata)
+
+                #show stress level:
+                if E[j,i] >= 0:
+                    hue1 = E[j,i]/self.problem.get_elastic_bounds()[1][j]
+                else:
+                    hue1 = E[j,i]/self.problem.get_elastic_bounds()[0][j]
+                hue2 = (1-hue1)*0.25 #linear interpolation between green(0.25) and red (0)
+
+                #show stiffnesses:
+                #hue2 = self.problem.get_A()[j,j]/12
+
+                self.springs_lines[j].set_color(matplotlib.colors.hsv_to_rgb((abs(hue2),1,0.9)))
+
+
+                if active[j] == 0:
+                    thickness = 2
                 else:
                     thickness = 4
-                self.springs_lines[i].set_linewidth(thickness)
+                self.springs_lines[j].set_linewidth(thickness)
             return self.artists
 
         self.ani = animation.FuncAnimation(self.fig, update_animation, init_func=init_animation, frames=self.T.shape[0], interval=1, blit=True, repeat=True)
         if filename is not None:
-            self.ani.save(filename)
+            self.ani.save(filename, fps=fps)
