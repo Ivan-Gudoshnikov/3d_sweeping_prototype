@@ -501,6 +501,7 @@ class ElastoplasticProcess:
         :return:
         """
         print("Starting the problem with m =", self.m, ", n =", self.n, ", d =", self.d, ", q = ", self.q)
+        print("dim V = ", np.linalg.matrix_rank(self.v_basis(self.d_xi_phi(xi0), self.d_xi_rho(xi0,t0))))
         T =  np.zeros(nsteps+1)
         XI = np.zeros((self.n*self.d, nsteps+1))
         E = np.zeros((self.m, nsteps + 1))

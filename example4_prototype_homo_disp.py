@@ -1,4 +1,4 @@
-from square_grid import SquareGrid
+from triangular_grid import TriangularGrid
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.linalg
@@ -7,37 +7,51 @@ from springs_view import SpringsView
 import math
 
 
-n1=13
-n2=9
+n1 = 5
+n2 = 5
 
 def a_func(orig, termin):
     base_stiffess = 1
-
-    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
-        stiffness=2*base_stiffess #non-diagonal springs have stiffness 2x
-    else:
-        stiffness=base_stiffess  #diagonal springs have stiffness 1x
-    return stiffness
+    return base_stiffess
 
 def cplus_func(orig, termin):
     base_yeld_stress=0.001
-
-    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
-        yeld_stress=base_yeld_stress #non-diagonal springs
-    else:
-        yeld_stress = base_yeld_stress/math.sqrt(2)  #diagonal sptings
-
-    return yeld_stress
+    return base_yeld_stress
 
 def cminus_func(orig, termin):
     return -cplus_func(orig, termin)
 
+def is_node_func(coords):
+    return True
+
+def add_springs_func(orig):
+    (i,j) = orig
+
+    termins = []
+    if i < n1-1:
+        termins.append((i+1,j))
+    if j < n2-1:
+        termins.append((i,j+1))
+    if (i < n1-1) and (j < n2-1):
+        termins.append((i+1, j + 1))
+    return termins
+
+def add_boundary_cond_func(coords):
+    velocity = None
+    if coords[0] == 0:
+        velocity = lambda t: (0,0)
+
+    if coords[0] == n1-1:
+        velocity = lambda t: (0.1, 0)
+
+    force = lambda t: (0, 0)
+
+    return velocity, force
 
 
 
-example3grid = SquareGrid(n1, n2, 0.5, 0.5, a_func, cminus_func,cplus_func, SquareGrid.HoldLeftDisplacementRight())
+example3grid = TriangularGrid(n1, n2, 0.5, is_node_func, add_springs_func, a_func, cminus_func,cplus_func, add_boundary_cond_func)
 
-bc=example3grid.HoldLeftDisplacementRight()
 example3 = example3grid.get_elastoplastic_process()
 
 

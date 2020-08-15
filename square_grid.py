@@ -1,30 +1,8 @@
 import numpy as np
 from elastoplastic_process import ElastoplasticProcess
-from abc import ABC, abstractmethod
+from boundary_conditions import BoundaryConditions
 
 class SquareGrid:
-    class BoundaryConditions(ABC):
-
-        @abstractmethod
-        def rho(self, outer, xi,t):
-            pass
-
-        @abstractmethod
-        def d_xi_rho(self, outer, xi, t):
-            pass
-
-        @abstractmethod
-        def d_t_rho(self,outer, xi, t):
-            pass
-
-        @abstractmethod
-        def f(self, outer, t):
-            pass
-
-        @abstractmethod
-        def q(self, outer):
-            pass
-
     def __init__(self, n1, n2, delta_x, delta_y, a_func, cminus_func, cplus_func, boundary_cond: BoundaryConditions):
         self.n1=n1
         self.n2=n2
