@@ -2,14 +2,16 @@ import numpy as np
 import phi
 
 
-Q=np.array([[ 1, 0, 1],
-            [-1, 1, 0],
-            [ 0,-1,-1]])
+Q=np.array([[ 1, 0, 1, 1, 0],
+            [-1, 1, 0, 0, 0],
+            [ 0,-1,-1, 0, 1],
+            [ 0, 0, 0,-1,-1]])
 
 
 xi=np.array([[0, 0],
              [1 ,1],
-             [2, 0]])
+             [2, 0],
+             [1,-1]])
 
 print("xi=")
 print(xi)
@@ -21,7 +23,7 @@ print("N=")
 print(phi.K(Q, xi))
 
 
-DP=phi.d_xi_phi(Q, xi)
+DP= phi.d_xi_phi(Q, xi)
 print("DPhi=")
 print(DP)
 
@@ -30,7 +32,7 @@ for k in range(d):
     print(k,"=k, DP[:,:,k]=")
     print(DP[:, :, k])
 
-d_phi_mat = phi.tensor_to_matrix(phi.d_xi_phi(Q,xi))
+d_phi_mat = phi.tensor_to_matrix(phi.d_xi_phi(Q, xi))
 print("DPmat=")
 print(d_phi_mat)
 

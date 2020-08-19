@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import scipy.optimize
 
-from quadprog_interface import QuadprogInterface, McGibbonQuadprog
+from solver.quadprog_interface import QuadprogInterface, McGibbonQuadprog
 
 
 class ConvexSet(ABC):

@@ -21,7 +21,7 @@ print("K=")
 print(phi.K(Q, xi))
 
 
-DP=phi.d_xi_phi(Q, xi)
+DP= phi.d_xi_phi(Q, xi)
 print("DPhi=")
 print(DP)
 
@@ -30,7 +30,7 @@ for k in range(d):
     print(k,"=k, DP[:,:,k]=")
     print(DP[:, :, k])
 
-d_phi_mat=phi.tensor_to_matrix(phi.d_xi_phi(Q,xi))
+d_phi_mat= phi.tensor_to_matrix(phi.d_xi_phi(Q, xi))
 print("DPmat=")
 print(d_phi_mat)
 print(phi.tensor_to_matrix(phi.matrix_to_tensor(d_phi_mat, d)))

@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.linalg
-from elastoplastic_process import ElastoplasticProcess
-from springs_view import SpringsView
+from solver.elastoplastic_process import ElastoplasticProcess
+from solver.springs_view import SpringsView
 
 Q = np.array([[ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
               [-1, 0, 1, 1, 1, 0, 0, 0, 0, 0],

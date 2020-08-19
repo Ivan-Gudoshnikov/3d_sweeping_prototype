@@ -2,8 +2,8 @@ import sys
 
 import numpy as np
 import scipy
-from convex import Polytope, Box
-from quadprog_interface import QuadprogInterface, McGibbonQuadprog
+from solver.convex import Polytope, Box
+from solver.quadprog_interface import McGibbonQuadprog
 
 def matrix_to_vector(matrix):
     """

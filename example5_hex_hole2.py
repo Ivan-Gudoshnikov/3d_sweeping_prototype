@@ -1,11 +1,7 @@
 from triangular_grid import TriangularGrid
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.linalg
-from elastoplastic_process import ElastoplasticProcess
-from springs_view import SpringsView
-import math
-
+from solver.springs_view import SpringsView
 
 n2 = 5
 n1 = 5

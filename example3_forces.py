@@ -1,9 +1,7 @@
-from square_grid import SquareGrid
+from solver.square_grid_old import SquareGrid
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.linalg
-from elastoplastic_process import ElastoplasticProcess
-from springs_view import SpringsView
+from solver.springs_view import SpringsView
 
 
 n1=5

@@ -23,7 +23,7 @@ print("N=")
 print(phi.K(Q, xi))
 
 
-DP=phi.d_xi_phi(Q, xi)
+DP= phi.d_xi_phi(Q, xi)
 print("DPhi=")
 print(DP)
 
@@ -31,14 +31,14 @@ d = DP.shape[2]
 for k in range(d):
     print(k,"=k, DP[:,:,k]=")
     print(DP[:, :, k])
-DPmat=phi.d_xi_phi_matrix(Q, xi)
+DPmat= phi.d_xi_phi_matrix(Q, xi)
 print("DPmat=")
 print(DPmat)
 print("rank DPmat=")
 print(np.linalg.matrix_rank(DPmat))
 
 print("Ker DPmat=")
-kerBasis=phi.kernelBasisDPhiMat(Q,xi)
+kerBasis= phi.kernelBasisDPhiMat(Q, xi)
 print(kerBasis)
 print("dim Ker DPmat=")
 print(np.linalg.matrix_rank(kerBasis))

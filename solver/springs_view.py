@@ -1,8 +1,7 @@
 import matplotlib.colors
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-import numpy as np
-from elastoplastic_process import ElastoplasticProcess, vector_to_matrix
+from solver.elastoplastic_process import ElastoplasticProcess, vector_to_matrix
 import matplotlib.animation as animation
 
 

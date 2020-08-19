@@ -1,6 +1,6 @@
 import numpy as np
-from elastoplastic_process import ElastoplasticProcess
-from boundary_conditions import BoundaryConditions
+from solver.elastoplastic_process import ElastoplasticProcess
+from solver.boundary_conditions import BoundaryConditions
 
 class SquareGrid:
     def __init__(self, n1, n2, delta_x, delta_y, a_func, cminus_func, cplus_func, boundary_cond: BoundaryConditions):

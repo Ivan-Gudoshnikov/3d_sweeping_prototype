@@ -30,7 +30,7 @@ print("N=")
 print(phi.K(Q, xi))
 
 
-DP=phi.d_xi_phi(Q, xi)
+DP= phi.d_xi_phi(Q, xi)
 print("DPhi=")
 print(DP)
 

@@ -1,16 +1,15 @@
 import numpy as np
-import math
-from elastoplastic_process import ElastoplasticProcess
-from boundary_conditions import BoundaryConditions
 
+from solver.boundary_conditions import BoundaryConditions
+from solver.elastoplastic_process import ElastoplasticProcess
 
-class TriangularGrid:
-    def __init__(self, n1, n2, delta, is_node_func,  add_springs_func, a_func, cminus_func, cplus_func, add_boundary_cond_func):
+class Grid:
+    def __init__(self, n1, n2, is_node_func, xi_func, add_springs_func, a_func, cminus_func, cplus_func, add_boundary_cond_func):
         self.n1 = n1
         self.n2 = n2
 
         self.d = 2
-        self.node_id_by_coord = -1*np.ones((n1, n2)).astype(int)
+        self.node_id_by_coord = -1*np.ones((n1, n2)).astype(int) #-1 means no node
         self.node_coord_by_id = []
         self.connections = []
 
@@ -26,8 +25,9 @@ class TriangularGrid:
         self.Q = np.zeros((self.n,0))
         for k in range(self.n):
             (i, j) = self.node_coord_by_id[k]
-            self.xi[2*k] = i * delta - j * delta / 2.
-            self.xi[2*k + 1] = j * delta * math.sqrt(3) / 2
+            xi=xi_func((i,j))
+            self.xi[2*k] =  xi[0]
+            self.xi[2*k+1] = xi[1]
             termins = add_springs_func((i, j))
             for k1 in range(len(termins)):
                 (i1,j1)=termins[k1]
@@ -68,44 +68,45 @@ class TriangularGrid:
 
 
 class NodeWise(BoundaryConditions):
-    def __init__(self, outer: TriangularGrid, add_boundary_cond_func):
-        self.add_boundary_cond_func=add_boundary_cond_func
+    def __init__(self, grid: Grid, add_boundary_cond_func):
+        self.add_boundary_cond_func = add_boundary_cond_func
         self.q_val = 0
-        self.d_xi_rho_mat = np.zeros((0,outer.n*outer.d))
+        self.d_xi_rho_mat = np.zeros((0, grid.n * grid.d))
         self.rho_list = []
-        for k in range(outer.n):
-            (i, j) = outer.node_coord_by_id[k]
+        for k in range(grid.n):
+            (i, j) = grid.node_coord_by_id[k]
             (v, f) = add_boundary_cond_func((i, j))
             if v is not None:
-                self.d_xi_rho_mat = np.vstack((self.d_xi_rho_mat, np.zeros((2, outer.n*outer.d))))
-                self.d_xi_rho_mat[self.q_val, k*outer.d] = 1
-                self.d_xi_rho_mat[self.q_val+1, k * outer.d+1] = 1
+                self.d_xi_rho_mat = np.vstack((self.d_xi_rho_mat, np.zeros((2, grid.n * grid.d))))
+                self.d_xi_rho_mat[self.q_val, k * grid.d] = 1
+                self.d_xi_rho_mat[self.q_val + 1, k * grid.d + 1] = 1
                 self.rho_list.append((i, j))
-                self.q_val = self.q_val + outer.d
+                self.q_val = self.q_val + grid.d
 
-    def rho(self, outer, xi, t):
+    def rho(self, grid, xi, t):
         raise ValueError("Not implemented")
 
-    def d_xi_rho(self, outer, xi, t):
+    def d_xi_rho(self, grid, xi, t):
         return self.d_xi_rho_mat
 
-    def d_t_rho(self, outer, xi, t):
+    def d_t_rho(self, grid, xi, t):
         velocities = np.zeros(self.q_val)
         for r in range(len(self.rho_list)):
             (v, f) = self.add_boundary_cond_func(self.rho_list[r])
-            velocities[outer.d * r] = v(t)[0]
-            velocities[outer.d * r + 1] = v(t)[1]
+            velocities[grid.d * r] = v(t)[0]
+            velocities[grid.d * r + 1] = v(t)[1]
         return velocities
 
-    def f(self, outer, t):
-        forces = np.zeros(outer.n*outer.d)
-        for k in range(outer.n):
-            (v, f) = self.add_boundary_cond_func(outer.node_coord_by_id[k])
-            forces[outer.d * k] = f(t)[0]
-            forces[outer.d * k + 1] = f(t)[1]
+    def f(self, grid, t):
+        forces = np.zeros(grid.n * grid.d)
+        for k in range(grid.n):
+            (v, f) = self.add_boundary_cond_func(grid.node_coord_by_id[k])
+            forces[grid.d * k] = f(t)[0]
+            forces[grid.d * k + 1] = f(t)[1]
         return forces
 
-    def q(self, outer):
+    def q(self, grid):
         return self.q_val
+
 
 

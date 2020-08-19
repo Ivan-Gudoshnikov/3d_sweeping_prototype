@@ -21,3 +21,4 @@ class BoundaryConditions(ABC):
     @abstractmethod
     def q(self, outer):
         pass
+

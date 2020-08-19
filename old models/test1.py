@@ -1,19 +1,15 @@
 import numpy as np
 import phi
-import scipy
 
 
-Q = np.array([[ 1, 0, 0,-1, 1, 0],
-              [-1, 1, 0, 0, 0, 1],
-              [ 0,-1, 1, 0,-1, 0],
-              [ 0, 0,-1, 1, 0,-1]])
+Q=np.array([[ 1, 0, 1],
+            [-1, 1, 0],
+            [ 0,-1,-1]])
 
 
 xi=np.array([[0, 0],
-             [0 ,1],
-             [1, 1],
-             [1, 0]])
-
+             [1 ,1],
+             [2, 0]])
 
 print("xi=")
 print(xi)
@@ -25,7 +21,7 @@ print("N=")
 print(phi.K(Q, xi))
 
 
-DP=phi.d_xi_phi(Q, xi)
+DP= phi.d_xi_phi(Q, xi)
 print("DPhi=")
 print(DP)
 
@@ -40,5 +36,3 @@ print(d_phi_mat)
 
 print("rank DPmat=")
 print(np.linalg.matrix_rank(d_phi_mat))
-
-
