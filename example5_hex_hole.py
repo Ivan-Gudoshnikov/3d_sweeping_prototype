@@ -1,7 +1,8 @@
-from triangular_grid import TriangularGrid
-import numpy as np
+import math
+from solver.grid import Grid
 import matplotlib.pyplot as plt
 from solver.springs_view import SpringsView
+import numpy as np
 
 n2 = 5
 n1 = 5
@@ -29,6 +30,11 @@ def is_node_func(coords):
         result = False
     return result
 
+def xi_func(coords):
+    delta=0.5
+    (i,j)=coords
+    return (i * delta - j * delta / 2., j * delta * math.sqrt(3) / 2)
+
 def add_springs_func(orig):
     (i,j) = orig
 
@@ -55,7 +61,7 @@ def add_boundary_cond_func(coords):
 
 
 
-example3grid = TriangularGrid(n1, n2, 0.5, is_node_func, add_springs_func, a_func, cminus_func,cplus_func, add_boundary_cond_func)
+example3grid = Grid(n1, n2, is_node_func, xi_func, add_springs_func, a_func, cminus_func,cplus_func, add_boundary_cond_func)
 
 example3 = example3grid.get_elastoplastic_process()
 

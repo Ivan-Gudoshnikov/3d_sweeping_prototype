@@ -1,4 +1,5 @@
-from triangular_grid import TriangularGrid
+import math
+from solver.grid import Grid
 import numpy as np
 import matplotlib.pyplot as plt
 from solver.springs_view import SpringsView
@@ -19,6 +20,12 @@ def cminus_func(orig, termin):
 
 def is_node_func(coords):
     return True
+
+def xi_func(coords):
+    delta=0.5
+    (i,j)=coords
+    return (i * delta - j * delta / 2., j * delta * math.sqrt(3) / 2)
+
 
 def add_springs_func(orig):
     (i,j) = orig
@@ -46,7 +53,7 @@ def add_boundary_cond_func(coords):
 
 
 
-example3grid = TriangularGrid(n1, n2, 0.5, is_node_func, add_springs_func, a_func, cminus_func,cplus_func, add_boundary_cond_func)
+example3grid = Grid(n1, n2,  is_node_func ,xi_func , add_springs_func, a_func, cminus_func,cplus_func, add_boundary_cond_func)
 
 example3 = example3grid.get_elastoplastic_process()
 
@@ -65,5 +72,6 @@ axE.set(title="E")
 
 XI = np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
 
-SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_skewed_homo_disp.mp4",20)
+#SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_skewed_homo_disp.mp4",20)
+SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
 plt.show()
