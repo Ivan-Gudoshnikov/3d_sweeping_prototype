@@ -73,8 +73,8 @@ example3 = example3grid.get_elastoplastic_process()
 
 
 t0 = 0
-dt = 0.0001
-nsteps = 2500
+dt = 0.001
+nsteps = 250
 
 xi_ref = example3grid.xi
 t_ref = 0

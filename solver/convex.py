@@ -108,6 +108,23 @@ class Polytope(ConvexSet):
     def normal_cone(self, H, x):
         raise NameError("NOT IMPLEMENTED YET: To find the constraints of the normal cone to a polytope we need to solve a constraint enumeration problem ")
 
+    def first_intersection_with_boundary(self, x0, xprime):
+        if x0 not in self:
+            raise NameError("x0 outside of the polytope")
+        if np.linalg.norm(np.matmul(self.Aeq, xprime)) > self.eps:
+            raise NameError("xprime takes outside of the polytope")
+
+        t = np.divide(self.b - np.matmul(self.A, x0), np.matmul(self.A, xprime))
+
+        min = np.Inf
+        for i in range(t.shape[0]):
+            if t[i]>0 and t[i] < min:
+                nmin=i
+                min = t[i]
+        if min == np.Inf:
+            raise NameError("The polytope is unbounded in the direction xprime")
+
+        return t[nmin], x0 + t[nmin]*xprime
 
 class Box(Polytope):
     def __init__(self, bmin, bmax):

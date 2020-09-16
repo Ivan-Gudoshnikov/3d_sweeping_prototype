@@ -1,20 +1,14 @@
 import numpy as np
 
-print(int(0.135 // 0.1)% 2)
-dt = 0.0001
-nsteps = 2100
-print(dt*nsteps)
+a=np.array([1., 2., -1])
+b=np.array([2., 0., 0.])
+np.seterr(divide='ignore')
+print(np.divide(a,b))
+print(np.Inf>0)
+print(np.NINF>0)
 
+c=np.array([1,-1,0,2])
+print(c.shape[0])
 
-u=[1]
+print(int(2.65))
 
-print(len(u))
-v=np.zeros((0,3))
-
-v2=np.array([[1,1,1]])
-v3=np.array([[2,2,2]])
-v=np.append(v,v2,0)
-v=np.append(v,v3,0)
-print(v)
-
-print(6//2)

@@ -418,8 +418,20 @@ class ElastoplasticProcess:
             sys.stdout.flush()
         return T, E
 
-
-
+    def leapfrog_step(self, e0, t0,  xi_ref, t_ref):
+        d_xi_phi = self.d_xi_phi(xi_ref)
+        d_xi_rho = self.d_xi_rho(xi_ref, t_ref)
+        [p_u_coords, p_v_coords] = self.p_u_and_p_v_coords(d_xi_phi, d_xi_rho)
+        u_basis = self.u_basis(d_xi_phi, d_xi_rho)
+        v_basis = self.v_basis(d_xi_phi, d_xi_rho)
+        print("dim V = ", np.linalg.matrix_rank(v_basis))
+        H = self.H(d_xi_phi, d_xi_rho)
+        R = self.R(d_xi_rho)
+        h_u_coords = self.h_u_coords(p_u_coords, H, self.f(t_ref))
+        moving_set = self.moving_set(p_u_coords, h_u_coords)
+        d_t_rho = self.d_t_rho(xi_ref, t_ref)
+        g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
+        return moving_set.first_intersection_with_boundary(e0, -np.matmul(v_basis, g_v_coords))
 
 
     def solve_fixed_spaces(self, xi0,e0,t0, dt, nsteps, xi_ref, t_ref):

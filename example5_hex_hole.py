@@ -31,7 +31,7 @@ def is_node_func(coords):
     return result
 
 def xi_func(coords):
-    delta=0.5
+    delta=1
     (i,j)=coords
     return (i * delta - j * delta / 2., j * delta * math.sqrt(3) / 2)
 
@@ -68,7 +68,7 @@ example3 = example3grid.get_elastoplastic_process()
 
 t0 = 0
 dt = 0.0001
-nsteps = 2500
+nsteps = 800
 
 xi_ref = example3grid.xi
 t_ref = 0
@@ -80,6 +80,6 @@ axE.set(title="E")
 
 XI = np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
 
-#SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_skewed_homo_disp.mp4",20)
-SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
+SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example5_hex_hole.mp4",20)
+#SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
 plt.show()
