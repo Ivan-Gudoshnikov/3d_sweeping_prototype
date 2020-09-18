@@ -431,7 +431,11 @@ class ElastoplasticProcess:
         moving_set = self.moving_set(p_u_coords, h_u_coords)
         d_t_rho = self.d_t_rho(xi_ref, t_ref)
         g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
-        return moving_set.first_intersection_with_boundary(e0, -np.matmul(v_basis, g_v_coords))
+        tcone = moving_set.tangent_cone(e0)
+        direction = tcone.projection(self.A, -np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
+        return moving_set.first_intersection_with_boundary(e0, direction)
+
+
 
 
     def solve_fixed_spaces(self, xi0,e0,t0, dt, nsteps, xi_ref, t_ref):

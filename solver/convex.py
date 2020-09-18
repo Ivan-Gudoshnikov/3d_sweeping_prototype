@@ -38,6 +38,14 @@ class ConvexSet(ABC):
         """
         pass
 
+    @abstractmethod
+    def tangent_cone(self,  x):
+        """
+        :param x:
+        :return:
+        """
+
+
 class ConvexCone(ABC):
     """
     TODO: implement it as a subclass of ConvexSet
@@ -108,6 +116,28 @@ class Polytope(ConvexSet):
     def normal_cone(self, H, x):
         raise NameError("NOT IMPLEMENTED YET: To find the constraints of the normal cone to a polytope we need to solve a constraint enumeration problem ")
 
+    def tangent_cone(self,  x):
+        """
+        :param x:
+        :return:
+        """
+        if x not in self:
+            raise NameError("x is not from the set!")
+        cone_Aeq = self.Aeq
+        if self.Aeq is not None:
+            cone_beq = np.zeros_like(self.beq)
+        else:
+            cone_beq = None
+
+        if self.A is not None:
+            ineq = np.abs(np.matmul(self.A,x) -self.b) <=self.eps
+            cone_A = self.A[ineq, :]
+            cone_b = np.zeros(np.sum(ineq))
+        else:
+            cone_A = None
+            cone_b = None
+        return Polytope(cone_A, cone_b, cone_Aeq, cone_beq)
+
     def first_intersection_with_boundary(self, x0, xprime):
         if x0 not in self:
             raise NameError("x0 outside of the polytope")
@@ -115,6 +145,7 @@ class Polytope(ConvexSet):
             raise NameError("xprime takes outside of the polytope")
 
         t = np.divide(self.b - np.matmul(self.A, x0), np.matmul(self.A, xprime))
+        t[np.abs(self.b - np.matmul(self.A, x0)) <=self.eps] = np.Inf
 
         min = np.Inf
         for i in range(t.shape[0]):

@@ -11,4 +11,6 @@ c=np.array([1,-1,0,2])
 print(c.shape[0])
 
 print(int(2.65))
+u=None
+print(np.zeros_like(u))
 
