@@ -418,7 +418,11 @@ class ElastoplasticProcess:
             sys.stdout.flush()
         return T, E
 
-    def leapfrog_step(self, e0, t0,  xi_ref, t_ref):
+    def leapfrog(self, e0, t0,  xi_ref, t_ref):
+        print("Starting the leapfrog method for the problem with m =", self.m, ", n =", self.n, ", d =", self.d, ", q = ", self.q)
+        T = np.zeros(1)
+        T[0]=t0
+        E = np.expand_dims(e0, 1)
         d_xi_phi = self.d_xi_phi(xi_ref)
         d_xi_rho = self.d_xi_rho(xi_ref, t_ref)
         [p_u_coords, p_v_coords] = self.p_u_and_p_v_coords(d_xi_phi, d_xi_rho)
@@ -431,10 +435,25 @@ class ElastoplasticProcess:
         moving_set = self.moving_set(p_u_coords, h_u_coords)
         d_t_rho = self.d_t_rho(xi_ref, t_ref)
         g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
-        tcone = moving_set.tangent_cone(e0)
-        direction = tcone.projection(self.A, -np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
-        return moving_set.first_intersection_with_boundary(e0, direction)
+        default_direction = -np.matmul(v_basis, g_v_coords)
+        t=t0
+        counter=0
+        e=e0
+        while True:
+            tcone = moving_set.tangent_cone(e)
+            direction = tcone.projection(self.A, default_direction, McGibbonQuadprog())
+            if np.linalg.norm(direction) <=moving_set.eps:
+                break
+            t_new, e_new = moving_set.first_intersection_with_boundary(e, direction)
+            e = e_new
+            t = t_new + t
+            T = np.append(T, t)
+            E = np.append(E, np.expand_dims(e,1), 1)
 
+            counter = counter + 1
+            sys.stdout.write("\r Completed leapfrog step "+str(counter))
+            sys.stdout.flush()
+        return T, E
 
 
 

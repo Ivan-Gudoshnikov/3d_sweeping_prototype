@@ -81,21 +81,21 @@ nsteps = 1000
 xi_ref = example3grid.xi
 t_ref = 0
 
-(t_leapfrog_1, e_leapfrog_1) = example3.leapfrog_step(example3grid.e0,t0,xi_ref,t_ref)
-(T, E) = example3.solve_fixed_spaces_e_only(example3grid.xi, example3grid.e0,t0, dt, nsteps, xi_ref, t_ref)
 
-step_lf = int(t_leapfrog_1/dt)
-print()
-print(np.linalg.norm(e_leapfrog_1 - E[:,step_lf]))
+#(T, E) = example3.solve_fixed_spaces_e_only(example3grid.xi, example3grid.e0,t0, dt, nsteps, xi_ref, t_ref)
+(T_leapfrog, E_leapfrog) = example3.leapfrog(example3grid.e0,t0,xi_ref,t_ref)
 
 
-
-figE, axE = plt.subplots()
-axE.plot(T, E.T)
-axE.set(title="E")
-XI = np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
+#figE, axE = plt.subplots()
+#axE.plot(T, E.T)
+#axE.set(title="E")
+#XI = np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
+XI_leapfrog = np.tile(np.expand_dims(xi_ref, axis=1),(1,T_leapfrog.shape[0]))
 
 #SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_homo_disp_hole.mp4",15)
-SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
-SpringsViewStatic(t_leapfrog_1,xi_ref,e_leapfrog_1,example3,((-3,7),(-1,8)))
+#SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
+#SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)))
+SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)), "example4_homo_disp_hole_LEAPFROG.mp4",1)
+
+
 plt.show()

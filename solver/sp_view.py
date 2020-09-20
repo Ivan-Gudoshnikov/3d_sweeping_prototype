@@ -34,7 +34,7 @@ class SweepingView:
         self.ax.add_line(self.sol_line)
 
         points_V=np.matmul(self.p_v_coords, points)
-        self.markers = Line2D([points_V[0],points_V[0]],[points_V[1],points_V[1]], marker='o',markerfacecolor='r', markeredgecolor='r')
+        self.markers = Line2D([points_V[0,:],points_V[0,:]],[points_V[1,:],points_V[1,:]], marker='o',markerfacecolor='r', markeredgecolor='r', linestyle='None')
         self.ax.add_line(self.markers)
 
         #self.nodes_markers = Line2D([0, 1], [0, 1], marker="None", linestyle="None", markerfacecolor="k",
