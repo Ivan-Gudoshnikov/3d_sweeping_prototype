@@ -18,20 +18,14 @@ def cminus_func(orig_coords, termin_coords):
     return -cplus_func(orig_coords, termin_coords)
 
 
-def add_boundary_cond_func(coords, loader :Yang_loader):
-    velocity = None
-    if np.abs(coords[1]- loader.get_min_y_in_xi())< eps:
-        velocity = lambda t: (0,0)
+def width_prime(t):
+    return 0.1
 
-    if np.abs(coords[1]- loader.get_max_y_in_xi())< eps:
-        velocity = lambda t: (0, 0.1)
-
-    force = lambda t: (0, 0)
-
-    return velocity, force
+def height_prime(t):
+    return 0.0
 
 
-loader = Yang_loader("configs_600/vertex_relax_0.12.txt", "configs_600/connectivity_matrix_0.12.txt",a_func, cminus_func, cplus_func, add_boundary_cond_func)
+loader = Yang_loader("configs_600/vertex_relax_0.12.txt", "configs_600/connectivity_matrix_0.12.txt",a_func, cminus_func, cplus_func, width_prime, height_prime)
 process= loader.get_elastoplastic_process()
 t0 = 0
 xi_ref = loader.get_xi()

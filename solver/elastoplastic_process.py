@@ -209,8 +209,9 @@ class ElastoplasticProcess:
         :return:
         """
         result = np.matmul(d_xi_phi, self.ker_d_xi_rho(d_xi_rho))
-        if np.linalg.matrix_rank(result) != self.n*self.d - self.q:
-            raise NameError("Constraint rho is not enough for that phi(xi)")
+        dof= self.n*self.d - self.q - np.linalg.matrix_rank(result)
+        if dof!=0:
+            raise NameError("Constraint rho is not enough for that phi(xi) "+ str(dof))
         return result
 
     def v_basis(self, d_xi_phi, d_xi_rho):

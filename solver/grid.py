@@ -51,8 +51,6 @@ class Grid:
 
         boundary_cond = NodeWise(self, add_boundary_cond_func)
 
-        #TODO: rho setup API
-        #hardcoded rho
 
         self.rho = lambda xi, t: boundary_cond.rho(self, xi,t)
         self.d_xi_rho = lambda xi, t: boundary_cond.d_xi_rho(self, xi, t)

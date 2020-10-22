@@ -12,5 +12,5 @@ print(c.shape[0])
 
 print(int(2.65))
 u=None
-print(np.zeros_like(u))
+print(np.zeros(2))
 
