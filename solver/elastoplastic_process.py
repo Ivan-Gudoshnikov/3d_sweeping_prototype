@@ -200,6 +200,9 @@ class ElastoplasticProcess:
         """
         return self.n*self.d - np.linalg.matrix_rank(np.vstack((d_xi_rho, d_xi_phi)))
 
+    def nullspaces_intersection(self, d_xi_phi,d_xi_rho):
+        return scipy.linalg.null_space(np.vstack((d_xi_rho, d_xi_phi)))
+
     def u_basis(self, d_xi_phi, d_xi_rho):
         """
         A very spceific, generally not orthogonal, basis in U, such that
@@ -208,9 +211,10 @@ class ElastoplasticProcess:
         :param d_xi_rho
         :return:
         """
-        result = np.matmul(d_xi_phi, self.ker_d_xi_rho(d_xi_rho))
+        result = np.matmul(d_xi_phi, self.ker_d_xi_rho(d_xi_rho)) #basis in U, if everything is linearly independent
         dof= self.n*self.d - self.q - np.linalg.matrix_rank(result)
         if dof!=0:
+            print(self.dim_intersection_nullspaces(d_xi_phi,d_xi_phi))
             raise NameError("Constraint rho is not enough for that phi(xi) "+ str(dof))
         return result
 
@@ -230,7 +234,8 @@ class ElastoplasticProcess:
         """
         M1 = self.u_basis(d_xi_phi, d_xi_rho)
         M2 = self.v_basis(d_xi_phi, d_xi_rho)
-        inv = np.linalg.inv(np.hstack((M1, M2)))
+        stacked=np.hstack((M1, M2))
+        inv = np.linalg.inv(stacked)
         return inv[range(0, M1.shape[1]), :], inv[range(M1.shape[1],self.m),:]
 
     def p_u_coords(self, d_xi_phi, d_xi_rho):

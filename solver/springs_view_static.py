@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 
 
 class SpringsViewStatic:
-    def __init__(self, t, xi, e, problem: ElastoplasticProcess, lim, filename=None, fps=None):
+    def __init__(self, t, xi, e, problem: ElastoplasticProcess, lim, filename=None, fps=None, highlight=None):
         if problem.get_d()!=2:
             raise NameError("3d networks are not supported yet")
 
@@ -19,6 +19,16 @@ class SpringsViewStatic:
                                     markeredgecolor="k", markersize=5)
         self.ax.add_line(self.nodes_markers)
 
+        xi = vector_to_matrix(xi[:], self.problem.get_d())
+
+        if highlight is not None:
+            x_highlight = xi[highlight, 0]
+            y_highlight = xi[highlight, 1]
+            self.highlighted_nodes = Line2D(x_highlight, y_highlight, marker="o", linestyle="None", markerfacecolor="k",
+                                    markeredgecolor="k", markersize=5)
+            self.ax.add_line(self.highlighted_nodes)
+
+
         self.springs_lines = []
         for i in range(problem.get_m()):
             self.springs_lines.append(Line2D([0, 1], [0, 1], marker=None, color="k", linewidth=1))
@@ -26,7 +36,7 @@ class SpringsViewStatic:
 
         self.time_text = plt.text(lim[0][0]+0.1,-0.8,"T="+ format(t, '.6f'))
 
-        xi = vector_to_matrix(xi[:], self.problem.get_d())
+
         self.nodes_markers.set_data(xi[:,0], xi[:,1])
         active = self.problem.e_bounds_box.get_active_box_faces(e[:], eps=None) #None means the same eps as in the computations
 

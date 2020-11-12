@@ -29,7 +29,7 @@ class SpringsView:
         self.artists = self.springs_lines.copy()
         self.artists.append(self.nodes_markers)
 
-        self.time_text = plt.text(lim[0][0]+0.1,-0.8,"T=")
+        self.time_text = plt.text(lim[0][0]+0.01,-0.08,"T=")
         self.artists.append(self.time_text)
 
         def init_animation():

@@ -63,7 +63,7 @@ class FiniteCone(ConvexCone):
 
 
 class Polytope(ConvexSet):
-    eps = 1e-10
+    eps = 1e-8
 
     def __init__(self, A,b,Aeq,beq):
         """
@@ -108,7 +108,7 @@ class Polytope(ConvexSet):
         else:
             ineq = True
         if self.Aeq is not None:
-            eq = (np.linalg.norm(np.matmul(self.Aeq, x)-self.beq, ord=1) < self.eps)
+            eq = (np.linalg.norm(np.matmul(self.Aeq, x)-self.beq, ord=np.inf) < self.eps)
         else:
             eq = True
         return ineq and eq
@@ -144,8 +144,12 @@ class Polytope(ConvexSet):
         if np.linalg.norm(np.matmul(self.Aeq, xprime)) > self.eps:
             raise NameError("xprime takes outside of the polytope")
 
-        t = np.divide(self.b - np.matmul(self.A, x0), np.matmul(self.A, xprime))
-        t[np.abs(self.b - np.matmul(self.A, x0)) <=self.eps] = np.Inf
+        # find all moments t_i when equality a_i (x0 + t_i xprime) = b_i holds for a row a_i of A
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t = np.divide(self.b - np.matmul(self.A, x0), np.matmul(self.A, xprime))
+            #if the nominator is zero, then we are already at the respective facet and we should not count for an intersection with it
+            #if the denominator is zero, then xprime is parallel to the respective facet, inf value of the ratio is ok
+            t[np.abs(self.b - np.matmul(self.A, x0)) <=self.eps] = np.Inf
 
         min = np.Inf
         for i in range(t.shape[0]):

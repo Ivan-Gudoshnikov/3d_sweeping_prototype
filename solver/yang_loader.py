@@ -43,7 +43,7 @@ class Yang_loader:
         self.Q = np.zeros((self.n,0))
 
 
-        for i in range(1,self.n):
+        for i in range(0,self.n):
             for j in range(i+1,self.n):
                 if adjacency[i,j]==1:
                     edge_vect = np.zeros((self.n, 1))

@@ -67,8 +67,6 @@ def add_boundary_cond_func(coords):
 
     return velocity, force
 
-
-
 example3grid = Grid(n1, n2, is_node_func, xi_func, add_springs_func, a_func, cminus_func,cplus_func, add_boundary_cond_func)
 
 example3 = example3grid.get_elastoplastic_process()
@@ -94,8 +92,8 @@ XI_leapfrog = np.tile(np.expand_dims(xi_ref, axis=1),(1,T_leapfrog.shape[0]))
 
 #SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_homo_disp_hole.mp4",15)
 #SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
-#SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)))
-SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)), "example4_homo_disp_hole_LEAPFROG.mp4",1)
+SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)))
+#SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)), "example4_homo_disp_hole_LEAPFROG.mp4",1)
 
 
 plt.show()

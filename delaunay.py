@@ -1,4 +1,6 @@
 import math
+
+from solver.springs_view import SpringsView
 from solver.yang_loader import Yang_loader
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,13 +27,15 @@ def height_prime(t):
     return 0.0
 
 
-loader = Yang_loader("DHU_NetworkData/stealth_0.3/config1/Iconfig.txt", "DHU_NetworkData/stealth_0.3/config1/delaunay_connectivity_matrix.txt",a_func, cminus_func, cplus_func, width_prime, height_prime)
+loader = Yang_loader("DHU_NetworkData/stealth_0.5/config1/Iconfig.txt", "DHU_NetworkData/stealth_0.5/config1/delaunay_connectivity_matrix.txt",a_func, cminus_func, cplus_func, width_prime, height_prime)
 process= loader.get_elastoplastic_process()
 t0 = 0
 xi_ref = loader.get_xi()
 t_ref = 0
 
-#(T_leapfrog, E_leapfrog) = process.leapfrog(loader.get_e0(),t0,xi_ref,t_ref)
-
-SpringsViewStatic(t0, xi_ref, loader.get_e0(), process,  ((-0.1,1.1),(-0.1,1.1)))
+(T_leapfrog, E_leapfrog) = process.leapfrog(loader.get_e0(),t0,xi_ref,t_ref)
+XI_leapfrog = np.tile(np.expand_dims(xi_ref, axis=1),(1,T_leapfrog.shape[0]))
+#SpringsViewStatic(t0, xi_ref, loader.get_e0(), process,  ((-0.1,1.1),(-0.1,1.1)))
+#SpringsView(T_leapfrog,XI_leapfrog ,E_leapfrog, process, ((-0.1,1.1),(-0.1,1.1)),"delaunay_0_5_config3_leapfrog.mp4",5)
+SpringsView(T_leapfrog,XI_leapfrog ,E_leapfrog, process, ((-0.1,1.1),(-0.1,1.1)))
 plt.show()
