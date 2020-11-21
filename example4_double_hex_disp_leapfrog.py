@@ -2,40 +2,39 @@ import math
 from solver.grid import Grid
 import numpy as np
 import matplotlib.pyplot as plt
-from solver.springs_view import SpringsView
 
+from solver.sp_view import SweepingView
+from solver.springs_view import SpringsView
+from solver.springs_view_static import SpringsViewStatic
+
+n1 = 4
 n2 = 3
-n1 = 2
 
 def a_func(orig, termin):
-    base_stiffess = 1.
-    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
-        return base_stiffess #non-diagonal springs have stiffness 2
-    else:
-        return base_stiffess/2 #diagonal springs have stiffness 1
+    base_stiffess = 1
+    return base_stiffess
 
 def cplus_func(orig, termin):
     base_yeld_stress=0.001
-
-    if (orig[0] == termin[0]) or (orig[1] == termin[1]):
-        yeld_stress=base_yeld_stress #non-diagonal springs
-    else:
-        yeld_stress = base_yeld_stress/math.sqrt(2)  #diagonal sptings
-
-    return yeld_stress
+    return base_yeld_stress
 
 def cminus_func(orig, termin):
     return -cplus_func(orig, termin)
 
 def is_node_func(coords):
     result = True
+    if  (coords[0] == 0) and (coords[1] == 2):
+        result = False
+    if (coords[0] == 3) and (coords[1] == 0):
+        result = False
+
     return result
 
 
 def xi_func(coords):
     delta=2
     (i,j)=coords
-    return (i * delta, j * delta)
+    return (i * delta - j * delta / 2., j * delta * math.sqrt(3) / 2)
 
 
 def add_springs_func(orig):
@@ -48,17 +47,15 @@ def add_springs_func(orig):
         termins.append((i,j+1))
     if (i < n1-1) and (j < n2-1) and is_node_func((i+1, j + 1)):
         termins.append((i+1, j + 1))
-    if (i < n1-1) and (j > 0) and is_node_func((i + 1, j - 1)):
-        termins.append((i + 1, j - 1))
     return termins
 
 def add_boundary_cond_func(coords):
     velocity = None
-    if coords[0] == 0 and coords[1] == 0:
+    if coords[0] == 0 and coords[1] == 1:
         velocity = lambda t: (0,0)
 
-    if coords[0] == 1 and coords[1] == 2:
-        velocity = lambda t: (0.1, 0.2)
+    if coords[0] == 3 and coords[1] == 1:
+        velocity = lambda t: (0.1, 0)
 
     force = lambda t: (0, 0)
 
@@ -73,18 +70,24 @@ example3 = example3grid.get_elastoplastic_process()
 
 t0 = 0
 dt = 0.00002
-nsteps = 2000
+nsteps = 7000
 
 xi_ref = example3grid.xi
 t_ref = 0
 (T, E) = example3.solve_fixed_spaces_e_only(example3grid.xi, example3grid.e0,t0, dt, nsteps, xi_ref, t_ref)
+(T_leapfrog, E_leapfrog) = example3.leapfrog(example3grid.e0,t0,xi_ref,t_ref)
 
 figE, axE = plt.subplots()
 axE.plot(T, E.T)
 axE.set(title="E")
 
 XI = np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
+XI_leapfrog = np.tile(np.expand_dims(xi_ref, axis=1),(1,T_leapfrog.shape[0]))
 
-#SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_skewed_homo_disp.mp4",20)
-SpringsView(T,XI,E, example3,((-3,7),(-1,8)))
+#SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_single_hex_disp.mp4",20)
+SpringsView(T,XI,E, example3, ((-3,7),(-1,8)))
+SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)))
+#SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)), "example4_single_hex_disp_LEAPFROG.mp4",1)
+
+#SweepingView(T, XI, E, E_leapfrog,  example3,((-0.004, 0.004),(-0.004,0.004)))
 plt.show()

@@ -4,7 +4,7 @@ from solver.boundary_conditions import BoundaryConditions
 from solver.elastoplastic_process import ElastoplasticProcess
 
 class Grid:
-    def __init__(self, n1, n2, is_node_func, xi_func, add_springs_func, a_func, cminus_func, cplus_func, add_boundary_cond_func):
+    def __init__(self, n1, n2, is_node_func, xi_func, add_springs_func, a_func, cminus_func, cplus_func, add_disp_boundary_cond_func, add_force_boundary_cond_func):
         self.n1 = n1
         self.n2 = n2
 
@@ -49,7 +49,7 @@ class Grid:
             self.cminus[i] = cminus_func(self.node_coord_by_id[self.connections[i][0]], self.node_coord_by_id[self.connections[i][1]])
             self.cplus[i] = cplus_func(self.node_coord_by_id[self.connections[i][0]], self.node_coord_by_id[self.connections[i][1]])
 
-        boundary_cond = NodeWise(self, add_boundary_cond_func)
+        boundary_cond = NodeWise(self, add_disp_boundary_cond_func, add_force_boundary_cond_func)
 
 
         self.rho = lambda xi, t: boundary_cond.rho(self, xi,t)
@@ -66,20 +66,22 @@ class Grid:
 
 
 class NodeWise(BoundaryConditions):
-    def __init__(self, grid: Grid, add_boundary_cond_func):
-        self.add_boundary_cond_func = add_boundary_cond_func
+    def __init__(self, grid: Grid, add_disp_boundary_cond_func, add_force_boundary_cond_func):
+        self.add_disp_boundary_cond_func = add_disp_boundary_cond_func
+        self.add_force_boundary_cond_func = add_force_boundary_cond_func
         self.q_val = 0
         self.d_xi_rho_mat = np.zeros((0, grid.n * grid.d))
         self.rho_list = []
         for k in range(grid.n):
             (i, j) = grid.node_coord_by_id[k]
-            (v, f) = add_boundary_cond_func((i, j))
-            if v is not None:
-                self.d_xi_rho_mat = np.vstack((self.d_xi_rho_mat, np.zeros((2, grid.n * grid.d))))
-                self.d_xi_rho_mat[self.q_val, k * grid.d] = 1
-                self.d_xi_rho_mat[self.q_val + 1, k * grid.d + 1] = 1
-                self.rho_list.append((i, j))
-                self.q_val = self.q_val + grid.d
+            for component in range(grid.d):
+                v = add_disp_boundary_cond_func((i,j), component)
+                if v is not None:
+                #a new row of d_xi_rho_mat which corresponds to the node and the component
+                    self.d_xi_rho_mat = np.vstack((self.d_xi_rho_mat, np.zeros((1, grid.n * grid.d))))
+                    self.d_xi_rho_mat[self.q_val, k * grid.d+component] = 1
+                    self.rho_list.append(((i, j), component, v))
+                    self.q_val = self.q_val + 1
 
     def rho(self, grid, xi, t):
         raise ValueError("Not implemented")
@@ -89,16 +91,17 @@ class NodeWise(BoundaryConditions):
 
     def d_t_rho(self, grid, xi, t):
         velocities = np.zeros(self.q_val)
-        for r in range(len(self.rho_list)):
-            (v, f) = self.add_boundary_cond_func(self.rho_list[r])
-            velocities[grid.d * r] = v(t)[0]
-            velocities[grid.d * r + 1] = v(t)[1]
+        counter=0
+        for constr in self.rho_list:
+            v=constr[2]
+            velocities[counter] = -v(t)
+            counter = counter+1
         return velocities
 
     def f(self, grid, t):
         forces = np.zeros(grid.n * grid.d)
         for k in range(grid.n):
-            (v, f) = self.add_boundary_cond_func(grid.node_coord_by_id[k])
+            f = self.add_force_boundary_cond_func(grid.node_coord_by_id[k])
             forces[grid.d * k] = f(t)[0]
             forces[grid.d * k + 1] = f(t)[1]
         return forces

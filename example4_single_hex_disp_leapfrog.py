@@ -51,11 +51,11 @@ def add_springs_func(orig):
 
 def add_boundary_cond_func(coords):
     velocity = None
-    if coords[0] == 0 and coords[1] == 0:
+    if coords[0] == 0 and coords[1] == 1:
         velocity = lambda t: (0,0)
 
-    if coords[0] == 1 and coords[1] == 2:
-        velocity = lambda t: (0, 0.1)
+    if coords[0] == 2 and coords[1] == 1:
+        velocity = lambda t: (0.1, 0)
 
     force = lambda t: (0, 0)
 
@@ -70,7 +70,7 @@ example3 = example3grid.get_elastoplastic_process()
 
 t0 = 0
 dt = 0.00002
-nsteps = 2000
+nsteps = 7000
 
 xi_ref = example3grid.xi
 t_ref = 0
@@ -86,8 +86,8 @@ XI_leapfrog = np.tile(np.expand_dims(xi_ref, axis=1),(1,T_leapfrog.shape[0]))
 
 #SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example4_single_hex_disp.mp4",20)
 SpringsView(T,XI,E, example3, ((-3,7),(-1,8)))
-#SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)))
-SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)), "example4_single_hex_disp_LEAPFROG.mp4",1)
+SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)))
+#SpringsView(T_leapfrog,XI_leapfrog,E_leapfrog, example3, ((-3,7),(-1,8)), "example4_single_hex_disp_LEAPFROG.mp4",1)
 
-#SweepingView(T, XI, E, E_leapfrog,  example3,((-0.004, 0.004),(-0.004,0.004)))
+SweepingView(T, XI, E, E_leapfrog,  example3,((-0.004, 0.004),(-0.004,0.004)))
 plt.show()

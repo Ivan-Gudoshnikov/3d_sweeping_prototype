@@ -66,7 +66,8 @@ class SweepingView:
         V_constr = np.matmul(moving_set.A, v_basis)
 
         vertices = pypoman.compute_polytope_vertices(V_constr, moving_set.b)
-        vertices[2], vertices[3] = vertices[3], vertices[2]
+        vertices[2], vertices[1] = vertices[1], vertices[2]
+        vertices[4], vertices[0] = vertices[0], vertices[4]
         return np.array(vertices), v_basis, p_v_coords
 
 
