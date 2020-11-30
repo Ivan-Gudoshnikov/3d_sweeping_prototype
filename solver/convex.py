@@ -63,7 +63,7 @@ class FiniteCone(ConvexCone):
 
 
 class Polytope(ConvexSet):
-    eps = 1e-8
+    eps = 1e-10
 
     def __init__(self, A,b,Aeq,beq):
         """
@@ -91,7 +91,7 @@ class Polytope(ConvexSet):
         # 1/2 proj^T.H.proj + (- H.x)^T.proj
         #  1/2 x^T.H.x + c^T.x
 
-        x, active = method.quadprog(H, -np.matmul(H,x), self.A, self.b, self.Aeq, self.beq)
+        x, active = method.quadprog(H, -H @ x, self.A, self.b, self.Aeq, self.beq)
         return x
 
     def linprog(self, c):

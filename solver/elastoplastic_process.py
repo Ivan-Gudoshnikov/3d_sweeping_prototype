@@ -79,7 +79,7 @@ class ElastoplasticProcess:
         self.n = Q.shape[0]
         # spatial dimension
         self.d = d
-        #rnak of the additional constraint
+        #rank of the additional constraint
         self.q = q
 
         self.A = np.diag(a)
@@ -184,7 +184,7 @@ class ElastoplasticProcess:
         :param d_xi_rho
         :return: external force term minus the reactions of rho
         """
-        # Take the "upper" part of the pseudo-inverse matrix of the combined  matrix [(d_xi_phi)^T  (d_xi_rho)^T], which is of full row rank
+        # Take the "upper" part of the pseudo-inverse matrix of the combined  matrix [(d_xi_phi)^T  (d_xi_rho)^T]
 
         M1 = d_xi_phi.T
         M2 = d_xi_rho.T

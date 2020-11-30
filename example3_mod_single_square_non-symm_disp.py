@@ -1,7 +1,6 @@
 import math
 
 from solver.elastoplastic_process import ElastoplasticProcess
-from solver.elastoplastic_process_lite import Elastoplastic_process_lite
 from solver.grid import Grid
 import numpy as np
 import matplotlib.pyplot as plt
@@ -111,6 +110,8 @@ a_mod=np.hstack((a_mod, np.array([1,1,1,1])))
 cplus_mod=example3grid.cplus
 cplus_mod=np.hstack((cplus_mod, np.ones(4)*0.01))
 cminus_mod=-cplus_mod
+cplus_mod=np.array()
+
 
 d=2
 q_mod=4
@@ -123,11 +124,8 @@ d_xi_rho_mod = lambda xi, t: d_xi_rho_mod_mat
 d_t_rho_mod = lambda xi, t: np.array([0,0,-0.1,0])
 f_mod = lambda t: np.zeros(12)
 
-r_lite = lambda t: np.array([0,0,-0.1*t,0])
 
 process_mod = ElastoplasticProcess(Q_mod, a_mod, cminus_mod, cplus_mod, d, q_mod, None, d_xi_rho_mod, d_t_rho_mod, f_mod)
-process_mod_lite = Elastoplastic_process_lite(Q_mod, a_mod, cminus_mod, cplus_mod, d, d_xi_rho_mod_mat, r_lite,f_mod)
-
 t0 = 0
 dt = 0.0001
 nsteps = 2000
@@ -136,13 +134,12 @@ nsteps = 2000
 xi_mod =  example3grid.xi
 xi_mod=np.hstack((xi_mod, np.array([-2.,1.,4.,1.])))
 
-
 t_ref = 0
 e0_mod= np.zeros(10)
 
 (T, E) = process_mod.solve_fixed_spaces_e_only(xi_mod, e0_mod,t0, dt, nsteps, xi_mod, t_ref)
 (T_leapfrog, E_leapfrog) = process_mod.leapfrog(e0_mod,t0,xi_mod,t_ref)
-(T_lite,E_lite,Y_lite)= process_mod_lite.solve_e_catch_up(e0_mod, t0, dt, nsteps, xi_mod)
+
 
 figE, axE = plt.subplots()
 axE.plot(T, E.T)
@@ -151,9 +148,7 @@ axE.set(title="E")
 XI = np.tile(np.expand_dims(xi_mod, axis=1),(1,T.shape[0]))
 
 #SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example3_new_two_squares_disp.mp4",20)
-SpringsView(T,XI,E_lite, process_mod,((-3,7),(-1,8)))
+SpringsView(T,XI,E, process_mod,((-3,7),(-1,8)))
 
-SweepingView(T, XI, E_lite, E_leapfrog,  process_mod,((-0.008, 0.008),(-0.008,0.008)))
-print(np.amax(E-E_lite))
-
+SweepingView(T, XI, E, E_leapfrog,  process_mod,((-0.008, 0.008),(-0.008,0.008)))
 plt.show()
