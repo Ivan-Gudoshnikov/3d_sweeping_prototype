@@ -4,8 +4,11 @@ from solver.boundary_conditions import BoundaryConditions
 from solver.elastoplastic_process import ElastoplasticProcess
 
 class Yang_loader:
-    def __init__(self, vertices_filepath, adjacency_filepath, a_func, cminus_func, cplus_func, width_prime, height_prime):
+    def __init__(self, vertices_filepath, adjacency_filepath, a_func, cminus_func, cplus_func,width_change, width_prime,height_change,height_prime):
         self.d = 2
+        self.width_change = width_change
+        self.height_change = height_change
+
         self.width_prime = width_prime #derivatives of the dispacement loadings
         self.height_prime = height_prime
 
@@ -78,16 +81,19 @@ class Yang_loader:
             if np.abs(orig_coords[1] - termin_coords[1]) > across_cutoff_y:
                 self.connections_across_Y.append(i)
 
-        boundary_cond = PeriodicBoundaryConditions(grid=self)
+        self.boundary_cond = PeriodicBoundaryConditions(grid=self)
 
 
-        self.rho = lambda xi, t: boundary_cond.rho(self, xi, t)
-        self.d_xi_rho = lambda xi, t: boundary_cond.d_xi_rho(self, xi, t)
-        self.d_t_rho = lambda xi, t: boundary_cond.d_t_rho(self, xi, t)
-        self.f = lambda t: boundary_cond.f(self, t)
+        self.rho = lambda xi, t: self.boundary_cond.rho(self, xi, t)
+        self.d_xi_rho = lambda xi, t: self.boundary_cond.d_xi_rho(self, xi, t)
+        self.d_t_rho = lambda xi, t: self.boundary_cond.d_t_rho(self, xi, t)
+        self.f = lambda t: self.boundary_cond.f(self, t)
+
+        self.d_xi_rho_mat = self.boundary_cond.d_xi_rho_mat
+        self.r = lambda t: self.boundary_cond.r(self,t)
 
         self.e0 = np.zeros(self.m)
-        self.q = boundary_cond.q(self)
+        self.q = self.boundary_cond.q(self)
 
 
     def get_elastoplastic_process(self):
@@ -203,6 +209,14 @@ class PeriodicBoundaryConditions(BoundaryConditions):
             result = np.append(result, np.array([0, -grid.height_prime(t)]))
         return result
 
+    def r(self, grid, t):
+        result = np.zeros(2)
+        for node in self.duplicate_horizontal_nodes:
+            result = np.append(result, np.array([-grid.width_change(t), 0]))
+        for node in self.duplicate_vertical_nodes:
+            result = np.append(result, np.array([0, -grid.height_change(t)]))
+        return result
+
     def d_xi_rho(self, grid, xi, t):
         return self.d_xi_rho_mat
 
@@ -215,51 +229,6 @@ class PeriodicBoundaryConditions(BoundaryConditions):
 
     def q(self, grid):
         return self.d_xi_rho_mat.shape[0]
-
-
-
-class NodeWise(BoundaryConditions):
-        def __init__(self, grid: Yang_loader, add_boundary_cond_func):
-            self.add_boundary_cond_func = add_boundary_cond_func
-            self.q_val = 0
-            self.d_xi_rho_mat = np.zeros((0, grid.n * grid.d))
-            self.rho_list = []
-            for k in range(grid.n):
-                coords=(grid.xi[2*k],grid.xi[2*k + 1])
-                (v, f) = add_boundary_cond_func(coords, grid)
-                if v is not None:
-                    coords = (grid.xi[2*k], grid.xi[2*k+1])
-                    self.d_xi_rho_mat = np.vstack((self.d_xi_rho_mat, np.zeros((2, grid.n * grid.d))))
-                    self.d_xi_rho_mat[self.q_val, k * grid.d] = 1
-                    self.d_xi_rho_mat[self.q_val + 1, k * grid.d + 1] = 1
-                    self.rho_list.append(coords)
-                    self.q_val = self.q_val + grid.d
-
-        def rho(self, grid, xi, t):
-            raise ValueError("Not implemented")
-
-        def d_xi_rho(self, grid, xi, t):
-            return self.d_xi_rho_mat
-
-        def d_t_rho(self, grid, xi, t):
-            velocities = np.zeros(self.q_val)
-            for r in range(len(self.rho_list)):
-                (v, f) = self.add_boundary_cond_func(self.rho_list[r], grid)
-                velocities[grid.d * r] = v(t)[0]
-                velocities[grid.d * r + 1] = v(t)[1]
-            return velocities
-
-        def f(self, grid, t):
-            forces = np.zeros(grid.n * grid.d)
-            for k in range(grid.n):
-                coords = (self.xi[2 * k], self.xi[2 * k + 1])
-                (v, f) = self.add_boundary_cond_func(coords, grid)
-                forces[grid.d * k] = f(t)[0]
-                forces[grid.d * k + 1] = f(t)[1]
-            return forces
-
-        def q(self, grid):
-            return self.q_val
 
 
 

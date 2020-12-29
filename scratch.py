@@ -35,3 +35,4 @@ C=np.array([[2,0],
 print(A@B@C)
 d=np.array([0.1,0.2,0.3])
 print(B@d)
+print(np.tile(d,3))

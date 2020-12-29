@@ -135,20 +135,19 @@ xi_mod=np.hstack((xi_mod, np.array([-2.,1.,4.,1.])))
 process_mod = ElastoplasticProcess(Q_mod, a_mod, cminus_mod, cplus_mod, d, q_mod, None, d_xi_rho_mod, d_t_rho_mod, f_mod)
 process_mod_lite = Elastoplastic_process_linearized(Q_mod, xi_mod, a_mod, cminus_mod, cplus_mod, d, d_xi_rho_mod_mat, r_lite, f_mod)
 
-
 t_ref = 0
-e0_mod= np.zeros(10)
+e0_mod=process_mod_lite.vbasis @ np.array([-0.0015,0.0008])
 
 (T, E) = process_mod.solve_fixed_spaces_e_only(xi_mod, e0_mod,t0, dt, nsteps, xi_mod, t_ref)
 (T_leapfrog, E_leapfrog) = process_mod.leapfrog(e0_mod,t0,xi_mod,t_ref)
-(T_lite,E_lite,Y_lite, Sigma_lite, Rho_lite)= process_mod_lite.solve_e_catch_up(e0_mod, t0, dt, nsteps)
+(T_lite,E_lite,Y_lite,Sigma_lite, Rho_lite)= process_mod_lite.solve_e_catch_up(e0_mod, t0, dt, nsteps)
+
 
 
 figY, axY = plt.subplots()
-figE, axE = plt.subplots()
-
-axE.plot(T_lite, (process_mod_lite.K @ E_lite).T)
-axE.set(title="Sigma")
+figSigma, axSigma = plt.subplots()
+axSigma.plot(T_lite, Sigma_lite.T)
+axSigma.set(title="Sigma")
 
 axY.plot(T_lite, Y_lite.T)
 axY.set(title="Y")
@@ -160,6 +159,7 @@ XI = np.tile(np.expand_dims(xi_mod, axis=1),(1,T.shape[0]))
 SpringsView(T,XI,E_lite, process_mod,((-3,7),(-1,8)))
 
 SweepingView(T, XI, E_lite, E_leapfrog,  process_mod,((-0.008, 0.008),(-0.008,0.008)))
+
 
 figRho, axRho = plt.subplots()
 axRho.plot(T_lite, Rho_lite.T)

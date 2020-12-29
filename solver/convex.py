@@ -63,7 +63,7 @@ class FiniteCone(ConvexCone):
 
 
 class Polytope(ConvexSet):
-    eps = 1e-10
+    eps = 1e-8
 
     def __init__(self, A,b,Aeq,beq):
         """
