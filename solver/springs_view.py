@@ -6,8 +6,8 @@ import matplotlib.animation as animation
 
 
 class SpringsView:
-    def __init__(self, T, XI, E, problem: ElastoplasticProcess, lim, filename=None, fps=None):
-        if problem.get_d()!=2:
+    def __init__(self, T, XI, E, problem, lim,time_text_coords, filename=None, fps=None):
+        if problem.d!=2:
             raise NameError("3d networks are not supported yet")
         self.T = T
         self.XI = XI
@@ -22,14 +22,14 @@ class SpringsView:
         self.ax.add_line(self.nodes_markers)
 
         self.springs_lines = []
-        for i in range(problem.get_m()):
+        for i in range(problem.m):
             self.springs_lines.append(Line2D([0, 1], [0, 1], marker=None, color="k", linewidth=1))
             self.ax.add_line(self.springs_lines[-1])  # add the last created line to the axes
 
         self.artists = self.springs_lines.copy()
         self.artists.append(self.nodes_markers)
 
-        self.time_text = plt.text(lim[0][0]+0.01,-0.08,"T=")
+        self.time_text = plt.text(time_text_coords[0],time_text_coords[1],"T=")
         self.artists.append(self.time_text)
 
         def init_animation():
@@ -37,21 +37,21 @@ class SpringsView:
 
         def update_animation(i):
             self.time_text.set_text("T=" + format(self.T[i], '.6f'))
-            xi = vector_to_matrix(self.XI[:, i], self.problem.get_d())
+            xi = vector_to_matrix(self.XI[:, i], self.problem.d)
 
             self.nodes_markers.set_data(xi[:,0], xi[:,1])
             active = self.problem.e_bounds_box.get_active_box_faces(E[:, i], eps=None) #None means the same eps as in the computations
 
-            for j in range(problem.get_m()):
+            for j in range(problem.m):
                 xdata = [xi[self.problem.connections[j][0], 0], xi[self.problem.connections[j][1], 0]]
                 ydata = [xi[self.problem.connections[j][0], 1], xi[self.problem.connections[j][1], 1]]
                 self.springs_lines[j].set_data(xdata, ydata)
 
                 #show stress level:
                 if E[j,i] >= 0:
-                    hue1 = E[j,i]/self.problem.get_elastic_bounds()[1][j]
+                    hue1 = E[j,i]/(self.problem.K[j,j]*self.problem.cplus[j])
                 else:
-                    hue1 = E[j,i]/self.problem.get_elastic_bounds()[0][j]
+                    hue1 = E[j,i]/(self.problem.K[j,j]*self.problem.cminus[j])
                 hue2 = (1-hue1)*0.25 #linear interpolation between green(0.25) and red (0)
 
                 #show stiffnesses:

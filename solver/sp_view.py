@@ -14,7 +14,7 @@ import pypoman
 
 class SweepingView:
     def __init__(self, T, XI, E, points, problem: ElastoplasticProcess, lim, filename=None, fps=None):
-        if problem.get_d()!=2:
+        if problem.d!=2:
             raise NameError("3d networks are not supported yet")
         self.T = T
         self.XI = XI

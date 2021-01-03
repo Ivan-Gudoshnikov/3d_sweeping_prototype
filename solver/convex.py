@@ -72,7 +72,12 @@ class Polytope(ConvexSet):
         :param Aeq:
         :param beq:
         """
-        self.n=A.shape[1]
+        if A is not None:
+            self.n=A.shape[1]
+        elif Aeq is not None:
+            self.n = Aeq.shape[1]
+        else:
+            self.n = None #Means any :-(
         self.A=A
         self.b=b
         self.Aeq=Aeq
@@ -91,8 +96,11 @@ class Polytope(ConvexSet):
         # 1/2 proj^T.H.proj + (- H.x)^T.proj
         #  1/2 x^T.H.x + c^T.x
 
-        x, active = method.quadprog(H, -H @ x, self.A, self.b, self.Aeq, self.beq)
-        return x
+        if (self.A is None) and (self.Aeq is None):
+            proj=x
+        else:
+            proj, active = method.quadprog(H, -H @ x, self.A, self.b, self.Aeq, self.beq)
+        return proj
 
     def linprog(self, c):
         result = scipy.optimize.linprog(c, self.A, self.b, self.Aeq, self.beq)
@@ -131,8 +139,12 @@ class Polytope(ConvexSet):
 
         if self.A is not None:
             ineq = np.abs(np.matmul(self.A,x) -self.b) <=self.eps
-            cone_A = self.A[ineq, :]
-            cone_b = np.zeros(np.sum(ineq))
+            if np.any(ineq):
+                cone_A = self.A[ineq, :]
+                cone_b = np.zeros(np.sum(ineq))
+            else:
+                cone_A = None
+                cone_b = None
         else:
             cone_A = None
             cone_b = None
@@ -141,8 +153,10 @@ class Polytope(ConvexSet):
     def first_intersection_with_boundary(self, x0, xprime):
         if x0 not in self:
             raise NameError("x0 outside of the polytope")
-        if np.linalg.norm(np.matmul(self.Aeq, xprime)) > self.eps:
-            raise NameError("xprime takes outside of the polytope")
+
+        if self.Aeq is not None:
+            if np.linalg.norm(np.matmul(self.Aeq, xprime)) > self.eps:
+                raise NameError("xprime takes outside of the polytope")
 
         # find all moments t_i when equality a_i (x0 + t_i xprime) = b_i holds for a row a_i of A
         with np.errstate(divide='ignore', invalid='ignore'):
