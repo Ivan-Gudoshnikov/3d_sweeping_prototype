@@ -86,7 +86,7 @@ class Yang_loader:
 
         self.rho = lambda xi, t: self.boundary_cond.rho(self, xi, t)
         self.d_xi_rho = lambda xi, t: self.boundary_cond.d_xi_rho(self, xi, t)
-        self.d_t_rho = lambda xi, t: self.boundary_cond.d_t_rho(self, xi, t)
+        self.d_t_r = lambda xi, t: self.boundary_cond.d_t_rho(self, xi, t)
         self.f = lambda t: self.boundary_cond.f(self, t)
 
         self.d_xi_rho_mat = self.boundary_cond.d_xi_rho_mat
@@ -94,11 +94,6 @@ class Yang_loader:
 
         self.e0 = np.zeros(self.m)
         self.q = self.boundary_cond.q(self)
-
-
-    def get_elastoplastic_process(self):
-        return ElastoplasticProcess(self.Q, self.a, self.cminus, self.cplus, self.d, self.q, self.rho, self.d_xi_rho,
-                                    self.d_t_rho, self.f)
 
     def get_xi(self):
         return self.xi

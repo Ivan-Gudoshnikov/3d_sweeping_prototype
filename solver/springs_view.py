@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 
 
 class SpringsView:
-    def __init__(self, T, XI, E, problem, lim,time_text_coords, filename=None, fps=None):
+    def __init__(self, T, XI, E, problem, lim, time_text_coords, filename=None, fps=None):
         if problem.d!=2:
             raise NameError("3d networks are not supported yet")
         self.T = T

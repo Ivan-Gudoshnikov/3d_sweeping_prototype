@@ -50,7 +50,7 @@ process = Elastoplastic_process_linearized(Q, xi0, a, cminus, cplus, d, d_xi_rho
 t_ref = 0
 e0= np.zeros(10)
 (T, E, Y_V, Sigma, Rho) = process.solve_e_in_V_catch_up(e0, t0, dt, nsteps)
-(T_leapfrog, E_leapfrog, E_V_leapfrog, Sigma__leapfrog, Rho__leapfrog) = process.solve_e_in_V_leapfrog(e0, t0, 1e-12)
+(T_leapfrog, E_leapfrog, E_V_leapfrog, Sigma_leapfrog, Rho_leapfrog) = process.solve_e_in_V_leapfrog(e0, t0, 1e-12)
 
 figSigma, axSigma = plt.subplots()
 axSigma.plot(T, Sigma.T)

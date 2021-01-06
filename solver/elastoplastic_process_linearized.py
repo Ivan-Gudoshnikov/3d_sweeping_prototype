@@ -265,9 +265,9 @@ class Elastoplastic_process_linearized:
             if np.linalg.norm(direction) <eps:
                 break
             t_1, e_v_1 = moving_set_shape.first_intersection_with_boundary(e_v_0, direction)
-            i = i+1
-            T = np.append(T, t_1)
+            T = np.append(T, t_1+T[i])
             E_V = np.append(E_V,np.expand_dims(e_v_1,1), 1)
+            i = i + 1
             sys.stdout.write("\r Completed step " + str(i))
             sys.stdout.flush()
 
