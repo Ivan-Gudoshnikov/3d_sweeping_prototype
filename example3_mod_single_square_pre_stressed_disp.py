@@ -29,14 +29,14 @@ q=4
 
 
 
-d_xi_rho_mat = np.array([[0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+R = np.array([[0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.]])
 
-
-r_prime = np.array([0,0,-0.1,0])
-r = lambda t: r_prime*t
+r_prime_vect=np.array([0,0,-0.1,0])
+r_prime = lambda t: r_prime_vect
+r = lambda t: r_prime_vect*t
 f = lambda t: np.zeros(12)
 
 
@@ -44,14 +44,15 @@ t0 = 0
 dt = 0.0001
 nsteps = 800
 
-process = Elastoplastic_process_linearized(Q, xi0, a, cminus, cplus, d, d_xi_rho_mat, r, f, r_prime)
+process = Elastoplastic_process_linearized(Q, xi0, a, cminus, cplus, d, R, r, f, r_prime)
 
 
 t_ref = 0
 e0 = process.vbasis @ np.array([0.001,-0.001])
 
-(T, E, Y_V, Sigma, Rho) = process.solve_e_in_V_catch_up(e0, t0, dt, nsteps)
-(T_leapfrog, E_leapfrog, E_V_leapfrog, Sigma__leapfrog, Rho__leapfrog) = process.solve_e_in_V_leapfrog(e0, t0, 1e-12)
+#(T, E, Y, Sigma, Rho) = process.solve_e_catch_up(e0, t0, dt, nsteps) #solve the sweeping process in R^m (slower)
+(T, E, Y_V, Sigma, Rho) = process.solve_e_in_V_catch_up(e0, t0, dt, nsteps) #solve the sweeping process in R^{dim V},(faster)
+(T_leapfrog, E_leapfrog, E_V_leapfrog, Sigma_leapfrog, Rho_leapfrog) = process.solve_e_in_V_leapfrog(e0, t0, 1e-12)
 
 figSigma, axSigma = plt.subplots()
 axSigma.plot(T, Sigma.T)
@@ -64,7 +65,7 @@ axRho.set(title="Rho")
 
 XI = np.tile(np.expand_dims(xi0, axis=1),(1,T.shape[0]))
 
-#SpringsView(T,XI,E, example3,((-3,7),(-1,8)),"example3_new_two_squares_disp.mp4",20)
+#SpringsView(T,XI,E, process,((-1,7),(-2,2)),time_text_coords=(-0.5,-1.5),"example3_new_two_squares_disp.mp4",20) #to save the movie in a file
 SpringsView(T,XI,E, process,((-1,7),(-2,2)),time_text_coords=(-0.5,-1.5))
 
 SweepingViewLinearized(T, E, E_leapfrog, process, ((-0.008, 0.008), (-0.008, 0.008)))

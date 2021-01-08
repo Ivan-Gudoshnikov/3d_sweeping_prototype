@@ -35,27 +35,28 @@ def height_change(t):
 
 
 
-loader = Yang_loader("DHU_NetworkData/stealth_0.3/config1/Iconfig.txt", "DHU_NetworkData/stealth_0.3/config1/delaunay_connectivity_matrix.txt",a_func, cminus_func, cplus_func,width_change, width_prime,height_change, height_prime)
+loader = Yang_loader("DHU_NetworkData/stealth_0.4/config1/Iconfig.txt", "DHU_NetworkData/stealth_0.4/config1/delaunay_connectivity_matrix.txt",a_func, cminus_func, cplus_func,width_change, width_prime,height_change, height_prime)
 t0 = 0
 dt=0.001
 nsteps=400
 
-xi_ref = loader.get_xi()
-e0 = loader.get_e0()
+xi0 = loader.xi
+e0 = loader.e0
 t_ref = 0
 
-process = Elastoplastic_process_linearized(loader.Q, xi_ref, loader.a, loader.cminus, loader.cplus, loader.d, loader.d_xi_rho_mat, loader.r, loader.f, loader.d_t_r(xi_ref,t0))
+process = Elastoplastic_process_linearized(loader.Q, xi0, loader.a, loader.cminus, loader.cplus, loader.d,
+                                           loader.boundary_condition.R, loader.boundary_condition.r, loader.boundary_condition.f, loader.boundary_condition.r_prime)
 
 
-(T, E, Y_V, Sigma, Rho) = process.solve_e_in_V_catch_up(e0, t0, dt, nsteps)
+#(T, E, Y, Sigma, Rho) = process.solve_e_catch_up(e0, t0, dt, nsteps) #solve the sweeping process in R^m (slower)
+(T, E, Y_V, Sigma, Rho) = process.solve_e_in_V_catch_up(e0, t0, dt, nsteps) #solve the sweeping process in R^{dim V},(faster)
 (T_leapfrog, E_leapfrog, E_V_leapfrog, Sigma_leapfrog, Rho_leapfrog) = process.solve_e_in_V_leapfrog(e0, t0, 1e-9)
 
-XI= np.tile(np.expand_dims(xi_ref, axis=1),(1,T.shape[0]))
-#SpringsViewStatic(t0, xi_ref, loader.get_e0(), process,  ((-0.1,1.1),(-0.1,1.1)))
-#SpringsView(T_lite,XI_leapfrog ,E_lite, process, ((-0.1,1.1),(-0.1,1.1)),"delaunay_0_3_config1.mp4",5)
+XI= np.tile(np.expand_dims(xi0, axis=1), (1, T.shape[0]))
+#SpringsView(T,XI, E, process, ((-0.1,1.1),(-0.1,1.1)),time_text_coords=(-0.09,-0.09),"delaunay_0_3_config1.mp4",5) #to save the movie in a file
 SpringsView(T,XI, E, process, ((-0.1,1.1),(-0.1,1.1)),time_text_coords=(-0.09,-0.09))
 
-XI_leapfrog=np.tile(np.expand_dims(xi_ref, axis=1),(1,T_leapfrog.shape[0]))
+XI_leapfrog=np.tile(np.expand_dims(xi0, axis=1), (1, T_leapfrog.shape[0]))
 SpringsView(T_leapfrog,XI_leapfrog, E_leapfrog, process, ((-0.1,1.1),(-0.1,1.1)),time_text_coords=(-0.09,-0.09))
 
 
@@ -69,8 +70,8 @@ summed_rho_vertical_links_x = np.zeros_like(T)
 summed_rho_vertical_links_y = np.zeros_like(T)
 
 
-l_h=len(loader.boundary_cond.duplicate_horizontal_nodes)
-l_v=len(loader.boundary_cond.duplicate_vertical_nodes)
+l_h=len(loader.duplicate_horizontal_nodes)
+l_v=len(loader.duplicate_vertical_nodes)
 for i in range(T.shape[0]):
     summed_rho_horizontal_links_x[i] = np.sum(Rho[[2+2*j for j in range(l_h)], i])
     summed_rho_horizontal_links_y[i] = np.sum(Rho[[3 + 2 * j for j in range(l_h)], i])

@@ -40,7 +40,7 @@ class Elastoplastic_process_linearized:
         :param R: matrix from additional constraint R(zeta-xi0) + r(t)=0
         :param r: function r(t) from the additional constraint
         :param f: external force applied at the nodes - function of t
-        :param r_prime: fixed vector for leapfrog algorithm. None if non-constant and the leapfrog won't be used
+        :param r_prime: for leapfrog algorithm
         """
 
         self.Q = Q
@@ -174,8 +174,8 @@ class Elastoplastic_process_linearized:
         Sigma = np.zeros((self.m, nsteps + 1)) #stresses
         Rho = np.zeros((self.q, nsteps + 1)) #reaction force values
 
-        for i in range(nsteps+1): #can be vectorized, provoded that r and f are vectorized
-            E[:, i] = Y[i] - self.G @ self.r(T[i]) + self.F @ self.f(T[i])
+        for i in range(nsteps+1): #can be further vectorized, provided that r and f are vectorized
+            E[:, i] = Y[:,i] - self.G @ self.r(T[i]) + self.F @ self.f(T[i])
             Sigma[:, i] = (self.K @ E[:, i])[:]
             Rho[:, i] = self.Rp.T @ self.d_xi_phi.T @ (-Sigma[:, i] + self.H @ self.f(T[i]))
 
@@ -250,9 +250,8 @@ class Elastoplastic_process_linearized:
 
         A = np.vstack((self.normals_in_V, -self.normals_in_V))
         eplusminus = np.hstack((self.Kinv @ self.cplus, -self.Kinv @ self.cminus))
-        default_direction = - self.G_V @ self.r_prime
-        #assuming f=const
-        box_offset_by_force =  - self.F @ self.f(t0)
+        default_direction = - self.G_V @ self.r_prime(t0) #assuming r_prime=const
+        box_offset_by_force =  - self.F @ self.f(t0) #assuming f=const
         #C_V (t) = moving_set_shape + G_V @ self.r(t)
         moving_set_shape = Polytope(A,
                                   eplusminus + np.hstack((box_offset_by_force , -box_offset_by_force)),

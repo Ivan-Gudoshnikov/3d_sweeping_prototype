@@ -82,8 +82,8 @@ class ElastoplasticProcess:
         #rank of the additional constraint
         self.q = q
 
-        self.A = np.diag(a)
-        self.Ainv = np.diag(1/a)
+        self.K = np.diag(a)
+        self.Kinv = np.diag(1 / a)
 
 
         self.cminus = cminus
@@ -102,7 +102,7 @@ class ElastoplasticProcess:
             spring_tuple = (np.where(self.Q[:, i] == 1)[0][0], np.where(self.Q[:, i] == -1)[0][0])
             self.connections.append(spring_tuple)
 
-        self.e_bounds_box=Box(np.matmul(self.Ainv,self.cminus), np.matmul(self.Ainv,self.cplus))
+        self.e_bounds_box=Box(np.matmul(self.Kinv, self.cminus), np.matmul(self.Kinv, self.cplus))
 
 
     def get_connections(self):
@@ -110,9 +110,9 @@ class ElastoplasticProcess:
     def get_Q(self):
         return self.Q
     def get_A(self):
-        return self.A
+        return self.K
     def get_Ainv(self):
-        return self.Ainv
+        return self.Kinv
     def get_m(self):
         return self.m
     def get_n(self):
@@ -124,7 +124,7 @@ class ElastoplasticProcess:
     def get_stress_bounds(self):
         return (self.cminus, self.cplus)
     def get_elastic_bounds(self):
-        return (np.matmul(self.Ainv, self.cminus), np.matmul(self.Ainv, self.cplus))
+        return (np.matmul(self.Kinv, self.cminus), np.matmul(self.Kinv, self.cplus))
 
 
     def phi(self, xi):
@@ -136,7 +136,7 @@ class ElastoplasticProcess:
         xi_mat=vector_to_matrix(xi,self.d)
         return np.sqrt(np.sum(np.square(np.matmul(self.Q.T, xi_mat)), axis=1))
 
-    def K(self, xi):
+    def D(self, xi):
         """
         Normalized directions of springs
         :param xi as a vector
@@ -157,7 +157,7 @@ class ElastoplasticProcess:
         Q1 = np.expand_dims(self.Q.T, axis=2)
         Q2 = np.tile(Q1, (1, 1, self.d))
 
-        N1 = np.swapaxes(np.expand_dims(self.K(xi), axis=2), 1, 2)
+        N1 = np.swapaxes(np.expand_dims(self.D(xi), axis=2), 1, 2)
         N2 = np.tile(N1, (1, self.n, 1))
 
         return tensor_to_matrix(np.multiply(N2, Q2))
@@ -219,7 +219,7 @@ class ElastoplasticProcess:
         return result
 
     def v_basis(self, d_xi_phi, d_xi_rho):
-        return scipy.linalg.null_space(np.matmul(self.A, self.u_basis(d_xi_phi, d_xi_rho)).T)
+        return scipy.linalg.null_space(np.matmul(self.K, self.u_basis(d_xi_phi, d_xi_rho)).T)
 
 
     def R(self, d_xi_rho):
@@ -280,7 +280,7 @@ class ElastoplasticProcess:
         :param fval: external forces vector of the size (nd)
         :return:
         """
-        return np.matmul(np.matmul(np.matmul(p_u_coords, self.Ainv), H), fval)
+        return np.matmul(np.matmul(np.matmul(p_u_coords, self.Kinv), H), fval)
 
     def moving_set(self, p_u_coords, h_u_coords):
         """
@@ -288,7 +288,7 @@ class ElastoplasticProcess:
         :param t:
         :return:
         """
-        A = np.vstack((self.A, -self.A))
+        A = np.vstack((self.K, -self.K))
         b = np.hstack((self.cplus, -self.cminus))
 
         Aeq = p_u_coords
@@ -308,7 +308,7 @@ class ElastoplasticProcess:
         dot_p_cone_coords is the decomposition of dot_p in terms the active normals
 
         """
-        N = self.e_bounds_box.normal_cone(self.A, e).N
+        N = self.e_bounds_box.normal_cone(self.K, e).N
 
         if N is not None:
             Aeq = np.hstack((u_basis, -N))
@@ -355,7 +355,7 @@ class ElastoplasticProcess:
         d_t_rho_0 = self.d_t_rho(xi_0, t_0)
         g_v_coords_0_0 = self.g_v_coords(p_v_coords_0_0,d_xi_phi_0,R_0_0,d_t_rho_0)
 
-        e_1 = moving_set.projection(self.A, e_0 - dt*np.matmul(v_basis_0_0, g_v_coords_0_0), McGibbonQuadprog())
+        e_1 = moving_set.projection(self.K, e_0 - dt * np.matmul(v_basis_0_0, g_v_coords_0_0), McGibbonQuadprog())
         #Old version:
         #e_1 = self.moving_set(xi_0, t_1).projection(self.A,
         #                                            e_0 - dt*np.matmul(self.v_basis(xi_0,t_0), self.g_v_coords(xi_0,t_0)),
@@ -380,7 +380,7 @@ class ElastoplasticProcess:
         d_t_rho = self.d_t_rho(xi_ref, t_0)
         g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
 
-        e_1 = moving_set.projection(self.A, e_0 - dt * np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
+        e_1 = moving_set.projection(self.K, e_0 - dt * np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
         dot_e = (e_1 - e_0) / dt
         (dot_xi, cone, dot_p_cone_coords) = self.dot_xi_and_p(e_0, dot_e, d_xi_phi, R, d_t_rho, u_basis, ker_d_xi_rho, p_u_coords)
         xi_1 = xi_0 + dt * dot_xi
@@ -415,7 +415,7 @@ class ElastoplasticProcess:
                 moving_set = self.moving_set(p_u_coords, h_u_coords)
                 d_t_rho = self.d_t_rho(xi_ref, t_0)
                 g_v_coords = self.g_v_coords(p_v_coords, d_xi_phi, R, d_t_rho)
-                e_1 = moving_set.projection(self.A, e_0 - dt * np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
+                e_1 = moving_set.projection(self.K, e_0 - dt * np.matmul(v_basis, g_v_coords), McGibbonQuadprog())
             except ValueError:
                 raise NameError("Can't perform a step number "+str(i))
             T[i+1] = t_1
@@ -447,7 +447,7 @@ class ElastoplasticProcess:
         e=e0
         while True:
             tcone = moving_set.tangent_cone(e)
-            direction = tcone.projection(self.A, default_direction, McGibbonQuadprog())
+            direction = tcone.projection(self.K, default_direction, McGibbonQuadprog())
             if np.linalg.norm(direction) <=moving_set.eps:
                 break
             t_new, e_new = moving_set.first_intersection_with_boundary(e, direction)

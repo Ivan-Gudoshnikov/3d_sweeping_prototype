@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from solver.springs_view_static import SpringsViewStatic
 
+## NOT WORKING CURRENTLY. LEFT FOR FUTURE EXPERIMENTS
+
 eps=1e-10
 
 def a_func(orig_coords, termin_coords):

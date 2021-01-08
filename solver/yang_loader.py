@@ -1,6 +1,6 @@
 import numpy as np
 
-from solver.boundary_conditions import BoundaryConditions
+from solver.boundary_conditions import AffineBoundaryCondition
 from solver.elastoplastic_process import ElastoplasticProcess
 
 class Yang_loader:
@@ -62,11 +62,6 @@ class Yang_loader:
         self.cminus = np.zeros(self.m)
         self.cplus = np.zeros(self.m)
 
-        across_cutoff_x = self.width/2.  # value to distinguish the connections across the simulation box
-        across_cutoff_y = self.height/2.
-        self.connections_across_X = []
-        self.connections_across_Y = []
-
         for i in range(self.m):
             orig=self.connections[i][0]
             termin=self.connections[i][1]
@@ -76,46 +71,38 @@ class Yang_loader:
             self.cminus[i] = cminus_func(orig_coords,termin_coords)
             self.cplus[i] = cplus_func(orig_coords,termin_coords)
 
+        self.e0 = np.zeros(self.m)
+        self.boundary_condition = self.get_periodic_boundary_condition(width_change, width_prime,height_change,height_prime)
+
+
+    def get_periodic_boundary_condition(self,width_change, width_prime,height_change,height_prime):
+        ## BOUNDARY CONDITION
+        across_cutoff_x = self.width/2.  # value to distinguish the connections across the simulation box
+        across_cutoff_y = self.height/2.
+        self.connections_across_X = []
+        self.connections_across_Y = []
+
+        for i in range(self.m):
+            orig = self.connections[i][0]
+            termin = self.connections[i][1]
+            orig_coords = (self.xi[2 * orig], self.xi[2 * orig + 1])
+            termin_coords = (self.xi[2 * termin], self.xi[2 * termin + 1])
+
             if np.abs(orig_coords[0] - termin_coords[0]) > across_cutoff_x:
                 self.connections_across_X.append(i)
             if np.abs(orig_coords[1] - termin_coords[1]) > across_cutoff_y:
                 self.connections_across_Y.append(i)
 
-        self.boundary_cond = PeriodicBoundaryConditions(grid=self)
-
-
-        self.rho = lambda xi, t: self.boundary_cond.rho(self, xi, t)
-        self.d_xi_rho = lambda xi, t: self.boundary_cond.d_xi_rho(self, xi, t)
-        self.d_t_r = lambda xi, t: self.boundary_cond.d_t_rho(self, xi, t)
-        self.f = lambda t: self.boundary_cond.f(self, t)
-
-        self.d_xi_rho_mat = self.boundary_cond.d_xi_rho_mat
-        self.r = lambda t: self.boundary_cond.r(self,t)
-
-        self.e0 = np.zeros(self.m)
-        self.q = self.boundary_cond.q(self)
-
-    def get_xi(self):
-        return self.xi
-
-    def get_e0(self):
-        return self.e0
-
-class PeriodicBoundaryConditions(BoundaryConditions):
-    def __init__(self, grid: Yang_loader):
-        m = grid.m
-
-        # HORIZONTAL "LONG" CONNECTIONS:
         left_side_nodes = {} #pairs of node numbers, list of "long" connections
         self.duplicate_horizontal_nodes = {}
-        #
-        for j in grid.connections_across_X:
+
+        for j in self.connections_across_X:
             #getting nodes ids
-            orig = grid.connections[j][0]
-            termin = grid.connections[j][1]
+            orig = self.connections[j][0]
+            termin = self.connections[j][1]
             #getting nodes coords
-            orig_coords = (grid.xi[2 * orig], grid.xi[2 * orig + 1])
-            termin_coords = (grid.xi[2 * termin], grid.xi[2 * termin + 1])
+            orig_coords = (self.xi[2 * orig], self.xi[2 * orig + 1])
+            termin_coords = (self.xi[2 * termin], self.xi[2 * termin + 1])
             #forming the list of "left" nodes(to be duplicated) and adjacent "long" edges
             if termin_coords[0] - orig_coords[0] > 0:
                 #orig is the "left" node
@@ -132,25 +119,25 @@ class PeriodicBoundaryConditions(BoundaryConditions):
 
         #updating grid.connections and grid.Q with the new node number n
         for node in left_side_nodes:
-            node_vect = np.zeros((1, m))
+            node_vect = np.zeros((1, self.m))
             for edge in left_side_nodes[node]:
-                grid.connections[edge] = (grid.n, grid.connections[edge][1]) if grid.Q[node, edge]==1 else (grid.connections[edge][0],grid.n) #modify connections depending if current node is orig or termin
-                node_vect[0,edge] = grid.Q[node, edge]
-                grid.Q[node, edge] = 0
+                self.connections[edge] = (self.n, self.connections[edge][1]) if self.Q[node, edge]==1 else (self.connections[edge][0],self.n) #modify connections depending if current node is orig or termin
+                node_vect[0,edge] = self.Q[node, edge]
+                self.Q[node, edge] = 0
 
-            self.duplicate_horizontal_nodes[node] = grid.n
-            grid.Q = np.append(grid.Q, node_vect, axis=0)
-            grid.xi = np.append(grid.xi, np.array([grid.xi[2*node] + grid.width, grid.xi[2 * node + 1]]))
-            grid.n = grid.n+1
+            self.duplicate_horizontal_nodes[node] = self.n
+            self.Q = np.append(self.Q, node_vect, axis=0)
+            self.xi = np.append(self.xi, np.array([self.xi[2*node] + self.width, self.xi[2 * node + 1]]))
+            self.n = self.n+1
 
         # VERTICAL "LONG" CONNECTIONS:
         bottom_side_nodes = {}  # pairs of node number, list of "long" connections
         self.duplicate_vertical_nodes = {}
-        for j in grid.connections_across_Y:
-            orig = grid.connections[j][0]
-            termin = grid.connections[j][1]
-            orig_coords = (grid.xi[2 * orig], grid.xi[2 * orig + 1])
-            termin_coords = (grid.xi[2 * termin], grid.xi[2 * termin + 1])
+        for j in self.connections_across_Y:
+            orig = self.connections[j][0]
+            termin = self.connections[j][1]
+            orig_coords = (self.xi[2 * orig], self.xi[2 * orig + 1])
+            termin_coords = (self.xi[2 * termin], self.xi[2 * termin + 1])
             if termin_coords[1] - orig_coords[1] > 0:
                 # orig is the "bottom" node
                 if orig not in bottom_side_nodes:
@@ -165,65 +152,57 @@ class PeriodicBoundaryConditions(BoundaryConditions):
                     bottom_side_nodes[termin].append(j)
 
         for node in bottom_side_nodes:
-            node_vect = np.zeros((1, m))
+            node_vect = np.zeros((1, self.m))
             for edge in bottom_side_nodes[node]:
-                grid.connections[edge] = (grid.n, grid.connections[edge][1]) if grid.Q[node, edge] == 1 else (grid.connections[edge][0], grid.n)  # modify connections depending if current node is orig or termin
-                node_vect[0, edge] = grid.Q[node, edge]
-                grid.Q[node, edge] = 0
+                self.connections[edge] = (self.n, self.connections[edge][1]) if self.Q[node, edge] == 1 else (self.connections[edge][0], self.n)  # modify connections depending if current node is orig or termin
+                node_vect[0, edge] = self.Q[node, edge]
+                self.Q[node, edge] = 0
 
-            self.duplicate_vertical_nodes[node] = grid.n
-            grid.Q = np.append(grid.Q, node_vect, axis=0)
-            grid.xi = np.append(grid.xi, np.array([grid.xi[2 * node], grid.xi[2 * node + 1]+grid.height]))
-            grid.n = grid.n + 1
+            self.duplicate_vertical_nodes[node] = self.n
+            self.Q = np.append(self.Q, node_vect, axis=0)
+            self.xi = np.append(self.xi, np.array([self.xi[2 * node], self.xi[2 * node + 1]+self.height]))
+            self.n = self.n + 1
 
-
-        # DERIVATIVE MATRICES
-        self.d_xi_rho_mat = np.zeros((2, grid.n * grid.d))
-        self.d_xi_rho_mat[0, 0] = 1 # fix the position of the first vertex
-        self.d_xi_rho_mat[1, 1] = 1
+        # R MATRIX
+        R = np.zeros((2, self.n * self.d))
+        R[0, 0] = 1 # fix the position of the first vertex
+        R[1, 1] = 1
         for node in self.duplicate_horizontal_nodes:
-            vect = np.zeros((2, grid.n * grid.d))
+            vect = np.zeros((2, self.n * self.d))
             vect[0, 2 * node] = -1            #x coordinate of the left node
             vect[1, 2 * node + 1 ] = -1       #y coordinate of the left node
             vect[0, 2 * self.duplicate_horizontal_nodes[node]] = 1         #x coordinate of the right node
             vect[1, 2 * self.duplicate_horizontal_nodes[node] + 1] = 1     #y coordinate of the right node
-            self.d_xi_rho_mat = np.append(self.d_xi_rho_mat, vect, axis=0)
+            R = np.append(R, vect, axis=0)
         for node in self.duplicate_vertical_nodes:
-            vect = np.zeros((2, grid.n * grid.d))
+            vect = np.zeros((2, self.n * self.d))
             vect[0, 2 * node] = -1  # x coordinate of the bottom node
             vect[1, 2 * node + 1] = -1  # y coordinate of the bottom node
             vect[0, 2 * self.duplicate_vertical_nodes[node]] = 1  # x coordinate of the top node
             vect[1, 2 * self.duplicate_vertical_nodes[node] + 1] = 1  # y coordinate the top node
-            self.d_xi_rho_mat = np.append(self.d_xi_rho_mat, vect, axis=0)
+            R = np.append(R, vect, axis=0)
 
-    def d_t_rho(self, grid, xi, t):
-        result = np.zeros(2)
-        for node in self.duplicate_horizontal_nodes:
-            result = np.append(result, np.array([-grid.width_prime(t), 0]))
-        for node in self.duplicate_vertical_nodes:
-            result = np.append(result, np.array([0, -grid.height_prime(t)]))
-        return result
+        def r(t):
+            result = np.zeros(2)
+            for node in self.duplicate_horizontal_nodes:
+                result = np.append(result, np.array([-width_change(t), 0]))
+            for node in self.duplicate_vertical_nodes:
+                result = np.append(result, np.array([0, -height_change(t)]))
+            return result
 
-    def r(self, grid, t):
-        result = np.zeros(2)
-        for node in self.duplicate_horizontal_nodes:
-            result = np.append(result, np.array([-grid.width_change(t), 0]))
-        for node in self.duplicate_vertical_nodes:
-            result = np.append(result, np.array([0, -grid.height_change(t)]))
-        return result
+        def r_prime(t):
+            result = np.zeros(2)
+            for node in self.duplicate_horizontal_nodes:
+                result = np.append(result, np.array([-width_prime(t), 0]))
+            for node in self.duplicate_vertical_nodes:
+                result = np.append(result, np.array([0, -height_prime(t)]))
+            return result
 
-    def d_xi_rho(self, grid, xi, t):
-        return self.d_xi_rho_mat
+        def f(t):
+            forces = np.zeros(self.n * self.d)
+            return forces
 
-    def rho(self, grid, xi, t):
-        raise ValueError("Not implemented")
-
-    def f(self, grid, t):
-        forces = np.zeros(grid.n * grid.d)
-        return forces
-
-    def q(self, grid):
-        return self.d_xi_rho_mat.shape[0]
+        return AffineBoundaryCondition(R.shape[0], R, r, r_prime, f)
 
 
 
