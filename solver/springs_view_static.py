@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 
 class SpringsViewStatic:
     def __init__(self, t, xi, e, problem: ElastoplasticProcess, lim, filename=None, fps=None, highlight=None):
-        if problem.get_d()!=2:
+        if problem.d!=2:
             raise NameError("3d networks are not supported yet")
 
         self.problem = problem
@@ -19,18 +19,10 @@ class SpringsViewStatic:
                                     markeredgecolor="k", markersize=5)
         self.ax.add_line(self.nodes_markers)
 
-        xi = vector_to_matrix(xi[:], self.problem.get_d())
-
-        if highlight is not None:
-            x_highlight = xi[highlight, 0]
-            y_highlight = xi[highlight, 1]
-            self.highlighted_nodes = Line2D(x_highlight, y_highlight, marker="o", linestyle="None", markerfacecolor="k",
-                                    markeredgecolor="k", markersize=5)
-            self.ax.add_line(self.highlighted_nodes)
-
+        xi = vector_to_matrix(xi[:], self.problem.d)
 
         self.springs_lines = []
-        for i in range(problem.get_m()):
+        for i in range(problem.m):
             self.springs_lines.append(Line2D([0, 1], [0, 1], marker=None, color="k", linewidth=1))
             self.ax.add_line(self.springs_lines[-1])  # add the last created line to the axes
 
@@ -40,16 +32,16 @@ class SpringsViewStatic:
         self.nodes_markers.set_data(xi[:,0], xi[:,1])
         active = self.problem.e_bounds_box.get_active_box_faces(e[:], eps=None) #None means the same eps as in the computations
 
-        for j in range(problem.get_m()):
+        for j in range(problem.m):
                 xdata = [xi[self.problem.connections[j][0], 0], xi[self.problem.connections[j][1], 0]]
                 ydata = [xi[self.problem.connections[j][0], 1], xi[self.problem.connections[j][1], 1]]
                 self.springs_lines[j].set_data(xdata, ydata)
 
                 #show stress level:
                 if e[j] >= 0:
-                    hue1 = e[j]/self.problem.get_elastic_bounds()[1][j]
+                    hue1 = e[j] / (self.problem.K[j, j] * self.problem.cplus[j])
                 else:
-                    hue1 = e[j]/self.problem.get_elastic_bounds()[0][j]
+                    hue1 = e[j] / (self.problem.K[j, j] * self.problem.cminus[j])
                 hue2 = (1-hue1)*0.25 #linear interpolation between green(0.25) and red (0)
 
                 #show stiffnesses:
@@ -63,4 +55,13 @@ class SpringsViewStatic:
                 else:
                     thickness = 4
                 self.springs_lines[j].set_linewidth(thickness)
+
+        if highlight is not None:
+            for i in highlight:
+                x_highlight = xi[i, 0]
+                y_highlight = xi[i, 1]
+                highlighted_nodes = Line2D([x_highlight], [y_highlight], marker="o", linestyle="None", markerfacecolor="k",
+                                    markeredgecolor="k", markersize=5)
+                self.ax.add_line(highlighted_nodes)
+
 

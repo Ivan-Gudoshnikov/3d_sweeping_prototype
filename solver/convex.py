@@ -195,7 +195,7 @@ class Box(Polytope):
                 active[i] = 1
             if x[i] - self.bmin[i] < eps:
                 if active[i] == 1:
-                    raise NameError("Equality constraints is a box are not supported yet")
+                    raise NameError("Equality constraints in a box are not supported yet")
                 active[i] = -1
         return active
 
